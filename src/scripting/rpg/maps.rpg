@@ -1,0 +1,35 @@
+map section00 {
+	#########################
+	#   #   #   #   #   #   #
+	#   #   #   #   #   #   #
+	## ### ### ### ### ### ## 
+	#                        
+	## ### ### ### ### ### ##	all_this_shit_gets_ignored
+	#   #   #   #   #   #   #				:D
+	#   #   #   #   #   #   #
+	#########################
+} with {
+	' ' = material floor000,
+	'#' = material wall000
+}, {
+	                         
+	 @                       
+	                         
+	                          
+	                         1
+	                         
+	                         
+	                         
+	         2               
+} with {
+	'1' = warp section001,
+	'2' = action on_interact loose_brick000,
+	'@' = player
+}
+
+entity candy_mountain {}
+
+action loose_brick000 {
+	msg "You found candy mountain"
+	get candy_mountain
+}

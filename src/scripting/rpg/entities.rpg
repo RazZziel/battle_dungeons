@@ -1,0 +1,11 @@
+entity soldierA extends(soldier,elf) {
+	position = (10,10);
+	inventory = (1*potion,10*gold,1*key_chest);
+	behaviour = { aggressive=false }
+	action on_interact piss_off_soldier
+}
+
+action piss_off_soldier {
+	say "I got this key I'm not giving you, how cruel am I?"
+	pissed_off += 1
+}
