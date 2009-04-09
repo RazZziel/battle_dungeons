@@ -18,32 +18,10 @@ typedef struct {
 } grid_t;
 
 #define PJ           '@'
-#define ENE_SKL      'z' //gray
-#define ENE_KOBOLD   'k' //green
-#define ENE_ORC      'o' //green
-#define ENE_GLOBIN   'g' //blue
-
-
-#define TER_WATHER   '=' //blue
-#define TER_ROAD     '.' //brown
-#define TER_GRASS    '.' //green
-#define OBS_ROCK     'M'
-#define OBS_WALL     '#' //gray
-#define OBS_TREE     'T' //green
-#define OBS_O_DOOR   '/' // brown
-#define OBS_C_DOOR   '+' // brown
-
-#define OBSTACLE
-#define MAP_FOREST   '&' //green
-#define MAP_PLAINS   '"' //green
-#define MAP_HILS     '~' //brown
-#define MAP_ROAD     '.' //brown
-#define MAP_PEAK     '^' //brown/white
-#define OBJ_WOOD_WPN '(' //brown
-#define OBJ_METL_WPN '(' //grey
-
+#define TER_GRASS    '.'
+#define OBS_WALL     '#'
 #define TER_GRASS_COLOR 20
-#define OBS_WALL_COLOR 30
+#define OBS_WALL_COLOR  30
 
 void visibility_area(grid_t *grid, pj_t *pj);
 void create_first_combat_grid(grid_t *grid, pj_t *pj, pj_t *enemy);

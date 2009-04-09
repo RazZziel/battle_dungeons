@@ -13,7 +13,7 @@ map section00 {%
 	'#' = material wall000
 }, {%
 	                         
-	 @   3                   
+	.@   3                   
 	                         
 	                          
 	                         1
@@ -24,7 +24,7 @@ map section00 {%
 %} with {
 	'1' = action on_touch warp(section001)
 	'2' = action on_interact loose_brick000()
-        '3' = entity keys
+        '3' = entity key09
 	'@' = entity player
 }
 
@@ -35,7 +35,7 @@ entity candy_mountain {
 }
 
 action loose_brick000() {
-	msg "You found candy mountain"
-        wii 132
-	get candy_mountain
+	msg("You found candy mountain")
+        wii(132,"lol")
+	get(candy_mountain)
 }

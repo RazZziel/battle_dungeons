@@ -1,11 +1,42 @@
 entity soldierA extends(soldier,elf) {
-	position = (10,10)
-	inventory = (1*potion,10*gold,1*key_chest)
-	behaviour.aggressive=false
-	action on_interact piss_off_soldier
+       position = (10,10)
+       inventory = (1*potion,10*gold,1*key_chest)
+       behaviour.aggressive = false
+       on_interact = piss_off_soldier()
 }
 
-action piss_off_soldier {
-	say "I got this key I'm not giving you, how cruel am I?"
-	pissed_off += 1
+action piss_off_soldier() {
+       say("I got this key I'm not giving you, how cruel am I?")
+       pissed_off += 1
+}
+
+entity pj {
+       tile = '@'
+}
+
+entity skeleton {
+       tile = 'z'
+       color = gray
+}
+entity kobold {
+       tile = 'k'
+       color = green
+}
+entity orc {
+       tile = 'o'
+       color = green
+}
+entity gobblin {
+       tile = 'g'
+       color = blue
+}
+
+
+entity wood_weapon {
+       tile = '('
+       color = brown
+}
+entity metal_weapon {
+       tile = '('
+       color = grey
 }

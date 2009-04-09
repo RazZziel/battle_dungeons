@@ -8,14 +8,14 @@ void load_bd (FILE *file, char *filename, char *item) {
       printf( "[ ok ]\n" );
     } else {
       printf( "[ !! ]\n" );
-      do_error(BD_LOAD_ERROR, item, filename);
+      die(BD_LOAD_ERROR, item, filename);
     }
 }
 
 void
 procesar_string (char *valor, char *linea, int *i) {
-  /* abcdefghijklmnopqrstuvwxyzáéíóúàèìòùäëïöü */
-  Const caracteres : Set of Char = ['a'..'z', 'A'..'Z', 'á'..'ú', 'Á'..'Ú'];
+  /* abcdefghijklmnopqrstuvwxyzÃ¡Ã©Ã­Ã³ÃºÃ Ã¨Ã¬Ã²Ã¹Ã¤Ã«Ã¯Ã¶Ã¼ */
+  Const caracteres : Set of Char = ['a'..'z', 'A'..'Z', 'Ã¡'..'Ãº', 'Ã'..'Ãš'];
 
    while( linea [ i ] !in caracteres ) { i++ };
    while(( linea [ i ] in caracteres ) and ( i <= strlen( linea ) ))
@@ -38,5 +38,5 @@ Const temp : String = '';
      }
    Val ( temp, valor, error );
    if (error <> 0) {
-     do_error(BD_PARSE_ERROR, "", filename , line);
+     die(BD_PARSE_ERROR, "", filename , line);
      }

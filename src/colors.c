@@ -3,17 +3,20 @@
 #include <ncurses.h>
 #include "colors.h"
 
-int
-init_colors()
+int init_colors()
 {
-  if (has_colors() /*&& can_change_color()*/) {
+    if (!has_colors() /*|| !can_change_color()*/)
+    {
+        return 0;
+    }
+
     start_color();    
 
     /* Inicializacion de colores */
     init_color(COLOR_GREY, 700, 0, 0);
 
     /* Inicializacion de pares */
-      // Colores basicos
+    // Colores basicos
     init_pair(10, COLOR_RED,     COLOR_BLACK);
     init_pair(20, COLOR_GREEN,   COLOR_BLACK);
     init_pair(30, COLOR_YELLOW,  COLOR_BLACK);
@@ -21,9 +24,8 @@ init_colors()
     init_pair(50, COLOR_MAGENTA, COLOR_BLACK);
     init_pair(60, COLOR_CYAN,    COLOR_BLACK);
     init_pair(70, COLOR_WHITE,   COLOR_BLACK);
-      // Colores personalizados
+    // Colores personalizados
     init_pair(80, COLOR_GREY,    COLOR_BLACK);
 
     return 1;
-  } else return 0;
 }

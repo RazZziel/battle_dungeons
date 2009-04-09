@@ -21,7 +21,12 @@ map { return MAP; }
 material { return MATERIAL; }
 entity { return ENTITY; }
 action { return ACTION; }
+extends { return EXTENDS; }
 with { return WITH; }
+\+= { return EQ_ADD; }
+\-= { return EQ_SUB; }
+\*= { return EQ_MUL; }
+\/= { return EQ_DIV; }
 '.' { return MAP_TILE; }
 on_touch { return ON_TOUCH; }
 on_interact { return ON_INTERACT; }
@@ -42,7 +47,7 @@ maybe(\({DIGIT}+\))?     { return MAYBE; }
     return STRING;
 }
 %[^%]*%                 {
-    printf("____%s____\n",yytext);
+    /*printf("____%s____\n",yytext);*/
     return MAP_CONTENT;
  }
 

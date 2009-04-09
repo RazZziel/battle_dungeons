@@ -8,6 +8,8 @@ all: ${OUT}
 
 run: all
 	-./${OUT} < rpg/maps.rpg
+	-./${OUT} < rpg/entities.rpg
+	-./${OUT} < rpg/materials.rpg
 
 
 ${OUT}: y.tab.c lex.yy.c

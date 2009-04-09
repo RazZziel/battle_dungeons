@@ -1,6 +1,6 @@
-/* Módulo de mounstruos, criaturas y cobradores de Hacienda de   *
+/* MÃ³dulo de mounstruos, criaturas y cobradores de Hacienda de   *
  * Battle Dungeons.                                              *
- * El módulo carga la base de datos de enemigos desde un archivo *
+ * El mÃ³dulo carga la base de datos de enemigos desde un archivo *
  * externo de texto, y gestiona cada uno de los animalillos.     */
 
 #include "coordenadas.h"

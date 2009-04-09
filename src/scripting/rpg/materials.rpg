@@ -1,0 +1,61 @@
+material water {
+         tile = '@'
+}
+material road {
+         tile = '.'
+}
+
+material water {
+         tile = '='
+         color = blue
+}
+material road {
+         tile = '.'
+         color = brown
+}
+material grass {
+         tile = '.'
+         color = green
+}
+
+material rock {
+         tile = 'M'
+         color = gray
+}
+material wall {
+         tile = '#'
+         color = gray
+}
+material tree {
+         tile = 'T'
+         color = green
+}
+material door_open {
+         tile = '/'
+         color = brown
+}
+material door_closed {
+         tile = '+'
+         color = brown
+}
+
+material map_forest {
+         tile = '&'
+         color = green
+}
+material map_plains {
+         tile = '"'
+         color = green
+}
+material map_hills {
+         tile = '~'
+         color = brown
+}
+material map_road {
+         tile = '.'
+         color = brown
+}
+material map_peak {
+         tile = '^'
+         color = brown
+}

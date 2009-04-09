@@ -11,8 +11,9 @@ int mapflag=0;
     char *str;
 }
 
-%expect 17
+%expect 34
 
+%type <val> exp_int
 %type <val> exp_logical
 
 %token <val> INTEGER
@@ -23,13 +24,15 @@ int mapflag=0;
 %token MAP_TILE
 
 %token MAP WITH MATERIAL ENTITY ACTION
+%token EXTENDS
+%token EQ_ADD EQ_SUB EQ_MUL EQ_DIV
 %token <val> TRUE FALSE MAYBE
 %token ON_TOUCH ON_INTERACT
 
 %%
 
 input: definition input | definition;
-definition: map_definition | entity_definition | action_definition;
+definition: map_definition | entity_definition | action_definition | material_definition;
 
 /* Maps */
 
@@ -48,11 +51,16 @@ function_id: IDENTIFIER '(' expression_list ')'
 
 /* Entities */
 
-entity_definition: ENTITY IDENTIFIER '{' entity_content '}'
+entity_definition: ENTITY IDENTIFIER entity_hierarchy '{' entity_content '}'
 	;
 entity_content: entity_line entity_content | entity_line
 	;
 entity_line: st_assignment
+	| action_trigger '=' function_id
+	;
+entity_hierarchy: | EXTENDS '(' superclass_list ')'
+	;
+superclass_list: IDENTIFIER ',' superclass_list | IDENTIFIER
 	;
 
 /* Actions */
@@ -65,6 +73,15 @@ action_line: statement
 	;
 action_trigger: ON_TOUCH | ON_INTERACT;
 
+/* Materials */
+
+material_definition: MATERIAL IDENTIFIER '{' material_content '}'
+	;
+material_content: material_line material_content | material_line
+	;
+material_line: st_assignment
+	;
+
 
 expression: IDENTIFIER
 	| COMPOUND_IDENTIFIER
@@ -72,8 +89,9 @@ expression: IDENTIFIER
 	| exp_int
 	| exp_string
 	| exp_tuple
-	| exp_inventory;
+	| exp_inventory
 	| '(' expression ')'
+	| MAP_TILE
 	;
 exp_logical: TRUE | FALSE | MAYBE
 	| exp_logical "||" exp_logical  { $$ = ( $1 || $3 ); }
@@ -81,15 +99,24 @@ exp_logical: TRUE | FALSE | MAYBE
 	| exp_logical "==" exp_logical  { $$ = ( $1 == $3 ); }
 	| exp_logical "!=" exp_logical  { $$ = ( $1 != $3 ); }
 	;
-exp_int:       INTEGER;
-exp_string:    STRING;
-exp_tuple:     '(' expression_list ')';
+exp_int: INTEGER
+	| exp_int '+' exp_int  { $$ = ( $1 + $3 ); }
+	| exp_int '-' exp_int  { $$ = ( $1 - $3 ); }
+	| exp_int '*' exp_int  { $$ = ( $1 * $3 ); }
+	| exp_int '/' exp_int  { $$ = ( $1 / $3 ); }
+	;
+exp_string: STRING;
+exp_tuple: '(' expression_list ')';
 exp_inventory: INTEGER '*' IDENTIFIER;
 expression_list: | expression ',' expression_list | expression;
 
 
-statement: st_assignment | st_declaration | IDENTIFIER expression;
+statement: st_assignment | st_declaration | function_id;
 st_assignment: lvalue '=' expression
+	| lvalue EQ_ADD exp_int  { $<val>1 = ( $<val>1 + $<val>3 ); }
+	| lvalue EQ_SUB  exp_int  { $<val>1 = ( $<val>1 - $<val>3 ); }
+	| lvalue EQ_MUL exp_int  { $<val>1 = ( $<val>1 * $<val>3 ); }
+	| lvalue EQ_DIV  exp_int  { $<val>1 = ( $<val>1 / $<val>3 ); }
 	;
 st_declaration: type IDENTIFIER;
 type: "int" | "string" | "bool";
