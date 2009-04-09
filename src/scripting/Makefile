@@ -1,11 +1,24 @@
-all: eval 
+CC=gcc
+LEX=flex
+YACC=bison
+OUT=eval
+LDFLAGS=-ly -lfl
+
+all: ${OUT}
+
+run: all
+	-./${OUT} < rpg/maps.rpg
+
+
+${OUT}: y.tab.c lex.yy.c
+	$(CC) $^ $(CFLAGS) $(LDFLAGS) -o $@
 
 y.tab.c: eval.y
-	yacc -d $<
-	
-lex.yy.c: eval.l
-	lex $<
-	
-eval: y.tab.o lex.yy.o
-	$(CC) -o $@ $^
+	$(YACC) -t -y -d $< -o $@
 
+lex.yy.c: eval.l
+	$(LEX) $<
+
+
+clean:
+	-rm *~ ${OUT} *.o y.tab.c lex.yy.c y.tab.h

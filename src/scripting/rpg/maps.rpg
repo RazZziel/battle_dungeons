@@ -1,4 +1,4 @@
-map section00 {
+map section00 {%
 	#########################
 	#   #   #   #   #   #   #
 	#   #   #   #   #   #   #
@@ -8,12 +8,12 @@ map section00 {
 	#   #   #   #   #   #   #				:D
 	#   #   #   #   #   #   #
 	#########################
-} with {
-	' ' = material floor000,
+%} with {
+	' ' = material floor000
 	'#' = material wall000
-}, {
+}, {%
 	                         
-	 @                       
+	 @   3                   
 	                         
 	                          
 	                         1
@@ -21,15 +21,21 @@ map section00 {
 	                         
 	                         
 	         2               
-} with {
-	'1' = warp section001,
-	'2' = action on_interact loose_brick000,
-	'@' = player
+%} with {
+	'1' = action on_touch warp(section001)
+	'2' = action on_interact loose_brick000()
+        '3' = entity keys
+	'@' = entity player
 }
 
-entity candy_mountain {}
+entity candy_mountain {
+	wogly = true
+	wigly = maybe(75)
+	purr  = maybe
+}
 
-action loose_brick000 {
+action loose_brick000() {
 	msg "You found candy mountain"
+        wii 132
 	get candy_mountain
 }

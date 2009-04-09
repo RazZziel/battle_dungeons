@@ -1,96 +1,111 @@
 %{
-/* This first section contains C code which will be included in the output
-   file.
-*/
 #include <stdlib.h>
 #include <stdio.h>
-/* Since we are using C++, we need to specify the prototypes for some 
-   internal yacc functions so that they can be found at link time.
-*/
-extern int yylex(void);
-extern void yyerror(char *msg);
+
+#define YYERROR_VERBOSE
+int mapflag=0;
 %}
 
-/* This is a union of the different types of values that a token can
-   take on.  In our case we'll just handle "numbers", which are of
-   C int type.
-*/
 %union {
-	int number;
+    int val;
+    char *str;
 }
 
-/* These are untyped tokens which are recognized as part of the grammar */
-%token AND OR EQUALS
+%expect 17
 
-/* Here we are, any NUMBER token is stored in the number member of the
-   union above.
-*/
-%token  NUMBER
+%type <val> exp_logical
 
-/* These rules all return a numeric value */
-%type 
- expression
-%type 
- logical_expression and or equals
+%token <val> INTEGER
+%token <str> STRING
+%token <str> IDENTIFIER
+%token COMPOUND_IDENTIFIER
+%token MAP_CONTENT
+%token MAP_TILE
+
+%token MAP WITH MATERIAL ENTITY ACTION
+%token <val> TRUE FALSE MAYBE
+%token ON_TOUCH ON_INTERACT
+
 %%
 
-/* Our language consists either of a single statement or of a list of statements.
-   Notice the recursivity of the rule, this allows us to have any
-   number of statements in a statement list.
-*/
-statement_list: statement | statement_list statement
+input: definition input | definition;
+definition: map_definition | entity_definition | action_definition;
+
+/* Maps */
+
+map_definition: MAP IDENTIFIER map_blocks;
+map_blocks: map_block ',' map_blocks | map_block;
+map_block: '{' map_content '}' map_block_rules;
+map_block_rules: | WITH '{' map_rules '}';
+map_content: MAP_CONTENT;
+map_rules: map_rule map_rules | map_rule;
+map_rule: MAP_TILE '=' map_tile_type;
+map_tile_type: MATERIAL IDENTIFIER
+	| ENTITY IDENTIFIER
+	| ACTION action_trigger function_id
+
+function_id: IDENTIFIER '(' expression_list ')'
+
+/* Entities */
+
+entity_definition: ENTITY IDENTIFIER '{' entity_content '}'
 	;
-	
-/* A statement is simply an expression.  When the parser sees an expression
-   we print out its value for debugging purposes.  Later on we'll
-   have more than just expressions in our statements.
-*/
-statement: expression
-	{ printf("Expression = %d\n", $1); }
+entity_content: entity_line entity_content | entity_line
 	;
-	
-/* An expression can be a number or a logical expression. */
-expression: NUMBER
-	|   logical_expression
+entity_line: st_assignment
 	;
-	
-/* We have a few different types of logical expressions */
-logical_expression: and
-	|           or
-	|           equals
+
+/* Actions */
+
+action_definition: ACTION function_id '{' action_content '}'
 	;
-	
-/* When the parser sees two expressions surrounded by parenthesis and
-   connected by the AND token, it will actually perform a C logical
-   expression and store the result into $$, which is the "value" of
-   this statement.
-*/
-and: '(' expression AND expression ')'
-	{ if ( $2 && $4 ) { $$ = 1; } else { $$ = 0; } }
+action_content: action_line action_content | action_line
 	;
-	
-or: '(' expression OR expression ')'
-	{ if ( $2 || $4 ) { $$ = 1; } else { $$ = 0; } }
+action_line: statement
 	;
-	
-equals: '(' expression EQUALS expression ')'
-	{ if ( $2 == $4 ) { $$ = 1; } else { $$ = 0; } }
+action_trigger: ON_TOUCH | ON_INTERACT;
+
+
+expression: IDENTIFIER
+	| COMPOUND_IDENTIFIER
+	| exp_logical
+	| exp_int
+	| exp_string
+	| exp_tuple
+	| exp_inventory;
+	| '(' expression ')'
 	;
-	
+exp_logical: TRUE | FALSE | MAYBE
+	| exp_logical "||" exp_logical  { $$ = ( $1 || $3 ); }
+	| exp_logical "&&" exp_logical  { $$ = ( $1 && $3 ); }
+	| exp_logical "==" exp_logical  { $$ = ( $1 == $3 ); }
+	| exp_logical "!=" exp_logical  { $$ = ( $1 != $3 ); }
+	;
+exp_int:       INTEGER;
+exp_string:    STRING;
+exp_tuple:     '(' expression_list ')';
+exp_inventory: INTEGER '*' IDENTIFIER;
+expression_list: | expression ',' expression_list | expression;
+
+
+statement: st_assignment | st_declaration | IDENTIFIER expression;
+st_assignment: lvalue '=' expression
+	;
+st_declaration: type IDENTIFIER;
+type: "int" | "string" | "bool";
+
+lvalue: IDENTIFIER | COMPOUND_IDENTIFIER;
+
 %%
 
-/* This is a sample main() function that just parses standard input
-   using our yacc grammar.  It allows us to feed sample scripts in
-   and see if they are parsed correctly.
-*/
+int yyerror(char *s)
+{
+    fprintf( stderr, "[%s]\n", s );
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
-	yyparse();
-	
-}
-/* This is an error function used by yacc, and must be defined */-
-void yyerror(char *message)
-{
-	fprintf(stderr, "%s\n", message);
+    yyparse();	
 }
 

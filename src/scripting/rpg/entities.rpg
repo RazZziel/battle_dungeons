@@ -1,7 +1,7 @@
 entity soldierA extends(soldier,elf) {
-	position = (10,10);
-	inventory = (1*potion,10*gold,1*key_chest);
-	behaviour = { aggressive=false }
+	position = (10,10)
+	inventory = (1*potion,10*gold,1*key_chest)
+	behaviour.aggressive=false
 	action on_interact piss_off_soldier
 }
 
