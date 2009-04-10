@@ -46,10 +46,6 @@ maybe(\({DIGIT}+\))?     { return MAYBE; }
     yylval.str[yyleng-1]='\0';
     return STRING;
 }
-%[^%]*%                 {
-    /*printf("____%s____\n",yytext);*/
-    return MAP_CONTENT;
- }
 
 {IDENTIFIER}             { return IDENTIFIER; }
 {IDENTIFIER}(\.{IDENTIFIER})+   { return COMPOUND_IDENTIFIER; }

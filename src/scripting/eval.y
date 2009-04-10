@@ -22,7 +22,6 @@ extern char* yytext;
 %token <str> STRING
 %token <str> IDENTIFIER
 %token COMPOUND_IDENTIFIER
-%token MAP_CONTENT
 %token MAP_TILE
 
 %token MAP WITH MATERIAL ENTITY ACTION
@@ -42,7 +41,7 @@ map_definition: MAP IDENTIFIER map_blocks;
 map_blocks: map_block ',' map_blocks | map_block;
 map_block: '{' map_content '}' map_block_rules;
 map_block_rules: | WITH '{' map_rules '}';
-map_content: STRING map_content | STRING /*MAP_CONTENT;*/
+map_content: STRING map_content | STRING;
 map_rules: map_rule map_rules | map_rule;
 map_rule: MAP_TILE '=' map_tile_type;
 map_tile_type: MATERIAL IDENTIFIER
