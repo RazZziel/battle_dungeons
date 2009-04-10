@@ -3,10 +3,16 @@
 #include <stdio.h>
 
 #define YYERROR_VERBOSE
+
+extern char* yytext;
+extern int yyget_lineno();
+extern int yylex();
+extern int yyerror(char*);
+
 int mapflag=0;
 char *yyfilename=NULL;
-extern char* yytext;
 %}
+
 
 %union {
     int val;

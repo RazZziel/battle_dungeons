@@ -3,13 +3,15 @@
 
 AC_PREREQ(2.61)
 AC_INIT(battle_dungeons, 0.00000002, u@phail.lol)
-AC_CONFIG_SRCDIR([src/files.c])
+AC_CONFIG_SRCDIR([src/main.c])
 AM_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
 
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
+AM_PROG_LEX
+AC_PROG_YACC
 
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lm':
