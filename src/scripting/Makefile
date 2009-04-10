@@ -7,12 +7,9 @@ LDFLAGS=-ly -lfl
 all: ${OUT}
 
 run: all
-	-./${OUT} < rpg/maps.rpg
-	-./${OUT} < rpg/entities.rpg
-	-./${OUT} < rpg/materials.rpg
+	-./${OUT} rpg/maps.rpg rpg/entities.rpg rpg/materials.rpg
 
-
-${OUT}: y.tab.c lex.yy.c
+${OUT}: main.c y.tab.c lex.yy.c
 	$(CC) $^ $(CFLAGS) $(LDFLAGS) -o $@
 
 y.tab.c: eval.y

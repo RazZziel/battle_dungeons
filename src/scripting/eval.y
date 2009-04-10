@@ -4,6 +4,8 @@
 
 #define YYERROR_VERBOSE
 int mapflag=0;
+char *yyfilename=NULL;
+extern char* yytext;
 %}
 
 %union {
@@ -40,7 +42,7 @@ map_definition: MAP IDENTIFIER map_blocks;
 map_blocks: map_block ',' map_blocks | map_block;
 map_block: '{' map_content '}' map_block_rules;
 map_block_rules: | WITH '{' map_rules '}';
-map_content: MAP_CONTENT;
+map_content: STRING map_content | STRING /*MAP_CONTENT;*/
 map_rules: map_rule map_rules | map_rule;
 map_rule: MAP_TILE '=' map_tile_type;
 map_tile_type: MATERIAL IDENTIFIER
@@ -127,12 +129,6 @@ lvalue: IDENTIFIER | COMPOUND_IDENTIFIER;
 
 int yyerror(char *s)
 {
-    fprintf( stderr, "[%s]\n", s );
+    fprintf( stderr, "%s:%d:[\"%s\"] %s\n", yyfilename, yyget_lineno(), yytext, s );
     return 0;
 }
-
-int main(int argc, char *argv[])
-{
-    yyparse();	
-}
-
