@@ -7,32 +7,33 @@
 extern char *yyfilename;
 extern int yyparse();
 
-int readlol(int argc, char *argv[])
+int parse_script(char *filename)
 {
-    int i;
-    for (i=1; i<argc; i++)
+    /* Calls yyparse on 'filename'.
+     * Returns:
+     *     0 on success
+     *     1 on failure */
+
+    int res;
+    FILE *file = fopen(filename, "r");
+
+    if ( file < 0 )
     {
-        FILE *file = fopen(argv[i], "r");
-        if ( file < 0 )
-        {
-            perror("Error");
-        }
-        else
-        {
-            int res;
-
-            yyrestart(file);
-            yyfilename = argv[i];
-
-            printf("Parsing %s\n", yyfilename);
-
-            res = yyparse();
-            fclose(file);
-            if (res != 0)
-            {
-                fprintf( stderr, "Could not load %s\n", yyfilename );
-            }
-        }
+        perror("Error");
+        return 1;
     }
+    yyrestart(file);
+    yyfilename = filename;
+            
+    printf("Parsing %s\n", filename);
+
+    res = yyparse();
+    fclose(file);
+    if (res != 0)
+    {
+        fprintf( stderr, "Could not load %s\n", filename );
+        return 1;
+    }
+
     return 0;
 }

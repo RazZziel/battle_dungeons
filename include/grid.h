@@ -4,22 +4,22 @@
 #include "character.h"
 
 typedef struct {
-  char type;
-  int color;
-  int solid; /* boolean */
-  int visible;
-  int special;
+    char type;
+    int color;
+    int solid; /* boolean */
+    int visible;
+    int special;
 } grid_node_t;
 
 typedef struct {
-  grid_node_t *grid;
-  int height;
-  int width;
+    grid_node_t *grid;
+    int height;
+    int width;
 } grid_t;
 
-#define PJ           '@'
-#define TER_GRASS    '.'
-#define OBS_WALL     '#'
+#define PJ              '@'
+#define TER_GRASS       '.'
+#define OBS_WALL        '#'
 #define TER_GRASS_COLOR 20
 #define OBS_WALL_COLOR  30
 

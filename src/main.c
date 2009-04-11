@@ -33,6 +33,8 @@ void init(int argc, const char **argv);
 void quit();
 void main_menu();
 
+game_engine_t game;
+
 void intro()
 {
     /* ph34r my l33t sk1llz */
@@ -141,7 +143,7 @@ void main_menu()
         switch( option )
         {
         case 1:
-            new_combat();
+            new_combat(game);
             break;
         case 2:
             story_mode();

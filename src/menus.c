@@ -6,7 +6,7 @@
 #include "windows.h"
 #include "menus.h"
 
-extern WINDOW *message_win, *game_win, *stats_win;
+extern game_engine_t game;
 
 void move_selection (WINDOW *window, int *option, int direction, int left, int right, int pair)
 {
@@ -121,7 +121,7 @@ void move_page(WINDOW *window, int *option, int direction, int *temp_len, char *
 
 }
 
-void inventory(grid_t *combat_grid)
+void inventory()
 {
 #define INVENTORY_WIN_HEIGHT (LINES-7)-4
 #define INVENTORY_WIN_WIDTH 55
@@ -167,11 +167,11 @@ void inventory(grid_t *combat_grid)
         mvwin(inventory_win, i, COLS-INVENTORY_WIN_WIDTH-3);
         mvwin(page_win[0], i+2, COLS-INVENTORY_WIN_WIDTH-2);
     
-        touchwin(message_win);
-        wrefresh(message_win);
+        touchwin(game.message_win);
+        wrefresh(game.message_win);
 
-        touchline(game_win, 0, i-3);
-        wrefresh(game_win);
+        touchline(game.game_win, 0, i-3);
+        wrefresh(game.game_win);
 
         wrefresh(inventory_win);
         wrefresh(page_win[0]);

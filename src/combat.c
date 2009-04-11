@@ -18,7 +18,7 @@
 #include "character.h"
 #include "global.h"
 
-extern WINDOW *message_win, *game_win, *stats_win;
+extern game_engine_t game;
 
 void attack(pj_t *pj, pj_t *enemy)
 {
@@ -100,12 +100,12 @@ void walk (grid_t *grid, int horizontal, int vertical, pj_t *pj, pj_t *enemy)
 
 }
 
-void combat_menu(grid_t * combat_grid)
+void combat_menu()
 {
 #define COMBAT_MENU_HEIGHT 10
 #define COMBAT_MENU_WIDTH  20
 
-    WINDOW * combat_menu_win;
+    WINDOW *combat_menu_win;
     char *menu_options[] = {
         "(A)ttack",
         "(M)agic",
@@ -122,14 +122,15 @@ void combat_menu(grid_t * combat_grid)
     {
     case 1: break;
     case 2: break;
-    case 3: touchwin(game_win);
-        touchwin(stats_win);
-        wrefresh(stats_win);
-        inventory(combat_grid);
+    case 3:
+        touchwin( game.game_win );
+        touchwin( game.stats_win );
+        wrefresh( game.stats_win );
+        inventory();
         break;
     default: break;
     }
-    destroy_win(combat_menu_win);
+    destroy_win( combat_menu_win );
 }
 
 void help_menu()
@@ -165,55 +166,63 @@ void help_menu()
     destroy_win(help_win);
 }
 
-void refresh_screen(grid_t *combat_grid, pj_t *pj, pj_t *enemy)
+void refresh_screen(pj_t *pj, pj_t *enemy)
 {
     int indent = max(strlen(pj->name)+3, 15) + 4;
 
-    werase(message_win);
-    werase(stats_win);
-    mvwprintw(stats_win, 1, 1,      "%s",             pj->name);
-    mvwprintw(stats_win, 2, 1,      "lvl/exp: %i/%i", pj->level, pj->exp );
-    mvwprintw(stats_win, 1, indent, "pg: %i(%i)",     pj->pg, pj->pg_max);
-    mvwprintw(stats_win, 2, indent, "mp: %i(%i)",     pj->mp, pj->mp_max);
-    wrefresh(stats_win);
+    werase(game.message_win);
+    werase(game.stats_win);
+    mvwprintw(game.stats_win, 1, 1,      "%s",             pj->name);
+    mvwprintw(game.stats_win, 2, 1,      "lvl/exp: %i/%i", pj->level, pj->exp );
+    mvwprintw(game.stats_win, 1, indent, "pg: %i(%i)",     pj->pg, pj->pg_max);
+    mvwprintw(game.stats_win, 2, indent, "mp: %i(%i)",     pj->mp, pj->mp_max);
+    wrefresh(game.stats_win);
 }
 
-int pj_round (grid_t *combat_grid, pj_t *pj, pj_t *enemy)
+int pj_round (pj_t *pj, pj_t *enemy)
 {
     bool key_ok;
 
     do {
         key_ok = TRUE;
 
-        switch( wgetch(game_win) )
+        switch( wgetch(game.game_win) )
         {
-        case KEY_LEFT:  walk(combat_grid, -1, 0, pj, enemy ); break;
-        case '4':       walk(combat_grid, -1, 0, pj, enemy ); break;
-        case KEY_RIGHT: walk(combat_grid,  1, 0, pj, enemy ); break;
-        case '6':       walk(combat_grid,  1, 0, pj, enemy ); break;
-        case KEY_UP:    walk(combat_grid,  0,-1, pj, enemy ); break;
-        case '8':       walk(combat_grid,  0,-1, pj, enemy ); break;
-        case KEY_DOWN:  walk(combat_grid,  0, 1, pj, enemy ); break;
-        case '2':       walk(combat_grid,  0, 1, pj, enemy ); break;
-        case '7':       walk(combat_grid, -1,-1, pj, enemy ); break;
-        case '9':       walk(combat_grid,  1,-1, pj, enemy ); break;
-        case '1':       walk(combat_grid, -1, 1, pj, enemy ); break;
-        case '3':       walk(combat_grid,  1, 1, pj, enemy ); break;
+        case KEY_LEFT:  walk(game.grid[0], -1, 0, pj, enemy ); break;
+        case '4':       walk(game.grid[0], -1, 0, pj, enemy ); break;
+        case KEY_RIGHT: walk(game.grid[0],  1, 0, pj, enemy ); break;
+        case '6':       walk(game.grid[0],  1, 0, pj, enemy ); break;
+        case KEY_UP:    walk(game.grid[0],  0,-1, pj, enemy ); break;
+        case '8':       walk(game.grid[0],  0,-1, pj, enemy ); break;
+        case KEY_DOWN:  walk(game.grid[0],  0, 1, pj, enemy ); break;
+        case '2':       walk(game.grid[0],  0, 1, pj, enemy ); break;
+        case '7':       walk(game.grid[0], -1,-1, pj, enemy ); break;
+        case '9':       walk(game.grid[0],  1,-1, pj, enemy ); break;
+        case '1':       walk(game.grid[0], -1, 1, pj, enemy ); break;
+        case '3':       walk(game.grid[0],  1, 1, pj, enemy ); break;
 	
-        case 'a':       attack( pj, enemy );                  break;
-        case 'm':       //magic();
+        case 'a': attack( pj, enemy );             break;
+        case 'm': /*magic();*/                     break;
+        case 'o': /*object();*/                    break;
+        case 'i':
+            inventory();
+            touchwin( game.game_win );
             break;
-        case 'o':       //object();
+        case '\n':
+            combat_menu( game.grid[0] );
+            touchwin( game.game_win );
             break;
-        case 'i':       inventory(combat_grid);
-            touchwin(game_win);                   break;
-	
-        case '\n':      combat_menu(combat_grid);
-            touchwin(game_win);                   break;
-        case 'h':       help_menu(); touchwin(game_win);      break;
-        case 'd':       pj->status.drunk=!pj->status.drunk;   break;
-      
-        default:        key_ok = FALSE;                       break;
+        case 'h':
+            help_menu();
+            touchwin( game.game_win );
+            break;
+        case 'd':
+            pj->status.drunk=!pj->status.drunk;
+            break;
+
+        default:
+            key_ok = FALSE;
+            break;
         }
 
     } while (!key_ok);
@@ -221,7 +230,7 @@ int pj_round (grid_t *combat_grid, pj_t *pj, pj_t *enemy)
     return FALSE; /* default = FALSE */
 }
 
-int enemy_round(grid_t *combat_grid, pj_t *pj, pj_t *enemy)
+int enemy_round(pj_t *pj, pj_t *enemy)
 {
     int vertical, horizontal;
 
@@ -245,12 +254,12 @@ int enemy_round(grid_t *combat_grid, pj_t *pj, pj_t *enemy)
         vertical = -vertical;
     }
 
-    if (grid_node(combat_grid, pj->y+vertical, pj->x)->solid)
+    if (grid_node(game.grid[0], pj->y+vertical, pj->x)->solid)
         vertical=0;
-    if (grid_node(combat_grid, pj->y+vertical, pj->x+horizontal)->solid)
+    if (grid_node(game.grid[0], pj->y+vertical, pj->x+horizontal)->solid)
         horizontal=0;
 
-    walk(combat_grid, horizontal, vertical, enemy, pj);
+    walk(game.grid[0], horizontal, vertical, enemy, pj);
 
     return TRUE; /* default = TRUE */
 }
@@ -261,10 +270,9 @@ int enemy_round(grid_t *combat_grid, pj_t *pj, pj_t *enemy)
    si no quedan pm o pivotes, correr hacia el enemy
    si se está al borde de la muerte, huir, pero si se es acorralado... MATAR */
 
-void combate (pj_t *pj, pj_t *enemy)
+void test_combat(pj_t *pj, pj_t *enemy)
 {
     bool pj_turn;
-    grid_t * combat_grid;
     int round=1,
         temp_round=0;
 
@@ -277,23 +285,23 @@ void combate (pj_t *pj, pj_t *enemy)
     erase();
 
     generate_game_screen();
-    new_grid(&combat_grid, LINES-7, COLS);
-    create_first_combat_grid(combat_grid, pj, enemy);
-    keypad(game_win, TRUE);  
+    new_grid( &game.grid[0], LINES-7, COLS );
+    create_first_combat_grid( game.grid[0], pj, enemy );
+    keypad( game.game_win, TRUE );  
 
-    draw_grid( combat_grid, pj, enemy);
+    draw_grid( game.grid[0], pj, enemy);
     //  pj_turn = ( dices(1, 20, modifier(pj->dex)) > dices(1, 20, modifier(enemy->dex)) );
     pj_turn = TRUE; //
 
     do
     {    
-        refresh_screen(combat_grid, pj, enemy); 
+        refresh_screen(pj, enemy); 
     
         if (pj_turn==1)
         {
 
             if (pj->status.dead==0)
-                pj_turn = pj_round( combat_grid, pj, enemy );
+                pj_turn = pj_round( pj, enemy );
             else
                 pj_turn = FALSE;
 
@@ -302,18 +310,18 @@ void combate (pj_t *pj, pj_t *enemy)
         {
 
             if (enemy->status.dead==0)
-                pj_turn = enemy_round( combat_grid, pj, enemy );
+                pj_turn = enemy_round( pj, enemy );
             else
                 pj_turn = TRUE;
 
         }
-        draw_pj(combat_grid, pj);
-        draw_pj(combat_grid, enemy);
+        draw_pj(game.grid[0], pj);
+        draw_pj(game.grid[0], enemy);
     
         if (enemy->pg<=0 && enemy->status.dead==0) {
             enemy->status.dead = 1;
             enemy->avatar = '&';
-            draw_pj(combat_grid, enemy);
+            draw_pj(game.grid[0], enemy);
             temp_round = round;
         }
     
@@ -387,9 +395,13 @@ void new_combat()
     option = menu( enemy_selection_menu_win, y+2, menu_options, MAIN_MENU_PAIR );
     switch( option )
     {
-    case 1: //buscar_enemigo( enemy );
+    case 1:
+        //buscar_enemigo( enemy );
+        test_combat( pj, enemy );
         break;
-    case 2: //enemigo_aleatorio( enemy );
+    case 2:
+        //enemigo_aleatorio( enemy );
+        test_combat( pj, enemy );
         break;
     default:
         break;
@@ -397,5 +409,4 @@ void new_combat()
 
     destroy_win(pj_selection_menu_win);
     destroy_win(enemy_selection_menu_win);
-    if( option < 3 ) combate( pj, enemy );
 }

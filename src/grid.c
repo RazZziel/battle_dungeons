@@ -6,6 +6,9 @@
 #include "windows.h"
 #include "colors.h"
 #include "global.h"
+#include "battle.h"
+
+extern game_engine_t game;
 
 void visibility_area(grid_t *grid, pj_t *pj)
 {
@@ -125,23 +128,23 @@ void draw_node (grid_t *grid, int y, int x)
 {
     if (grid_node(grid, y, x)->visible)
     {
-        wattron(game_win, COLOR_PAIR(grid_node(grid, y, x)->color));
-        mvwprintw(game_win, y, x, "%c", grid_node(grid, y, x)->type);
+        wattron( game.game_win, COLOR_PAIR(grid_node(grid, y, x)->color) );
+        mvwprintw( game.game_win, y, x, "%c", grid_node(grid, y, x)->type );
     }
     else
     {
-        mvwprintw(game_win, y, x, " ");
+        mvwprintw( game.game_win, y, x, " " );
     }
-    wrefresh(game_win);
+    wrefresh( game.game_win );
 }
 
 void draw_pj (grid_t *grid, pj_t *pj)
 {
     if (grid_node(grid, pj->y, pj->x)->visible)
     {
-        wattron(game_win, COLOR_PAIR(pj->color));
-        mvwprintw( game_win, pj->y, pj->x, "%c", pj->avatar );
-        wrefresh(game_win);
+        wattron( game.game_win, COLOR_PAIR(pj->color) );
+        mvwprintw( game.game_win, pj->y, pj->x, "%c", pj->avatar );
+        wrefresh( game.game_win );
     }
 }
 
@@ -155,19 +158,19 @@ void draw_grid (grid_t *grid, pj_t *pj, pj_t *enemy)
         {
             if (grid_node(grid, j, i)->visible)
             {
-                wattron(game_win, COLOR_PAIR(grid_node(grid, j, i)->color));
-                mvwprintw( game_win, j, i, "%c", grid_node(grid, j, i)->type );
+                wattron( game.game_win, COLOR_PAIR(grid_node(grid, j, i)->color) );
+                mvwprintw( game.game_win, j, i, "%c", grid_node(grid, j, i)->type );
             }
         }
     }
 
-    wattron(game_win, COLOR_PAIR(10));
-    mvwprintw( game_win, pj->y, pj->x, "%c", pj->avatar );
+    wattron( game.game_win, COLOR_PAIR(10) );
+    mvwprintw( game.game_win, pj->y, pj->x, "%c", pj->avatar );
     if (grid_node(grid, enemy->y, enemy->x)->visible)
     {
-        wattron(game_win, COLOR_PAIR(40));
-        mvwprintw( game_win, enemy->y, enemy->x, "%c", enemy->avatar );
+        wattron( game.game_win, COLOR_PAIR(40) );
+        mvwprintw( game.game_win, enemy->y, enemy->x, "%c", enemy->avatar );
     }
 
-    wrefresh(game_win);
+    wrefresh( game.game_win );
 }
