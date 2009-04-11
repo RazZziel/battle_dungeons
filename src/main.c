@@ -27,6 +27,8 @@
 #include "errors.h"
 #include "combat.h"
 #include "story.h"
+#include "scripting.h"
+#include "global.h"
 
 void intro();
 void init(int argc, const char **argv);
@@ -104,11 +106,13 @@ void init(int argc, const char **argv)
 void quit()
 {
     endwin();
+#if 0
     printf( "\n" );
     printf( "Battle Dungeons v.%s\n", VERSION );
     printf( "Raziel Productions 2005\n" );
     printf( "\n" );
     printf( "                -Yo soy goma. Tú eres cola.\n\n" );
+#endif
     endwin();             // ncurses unloading
 }
 
@@ -139,7 +143,7 @@ void main_menu()
         mvwprintw( main_menu_win, ++y, x, " \\*________________________*/" );
     
         option = menu( main_menu_win, y+4, menu_options, MAIN_MENU_PAIR );
-        loose_focus( main_menu_win );
+        drop_focus( main_menu_win );
         switch( option )
         {
         case 1:
@@ -162,10 +166,16 @@ void main_menu()
 int main(int argc, const char *argv[])
 {
     atexit(quit);
-    init(argc, argv);
+    //init(argc, argv);
+    parse_script(SCRIPT_MAPS);
+    return 0;
 
     //intro();
+#if 0
     main_menu();
+#else
+    new_combat(game);
+#endif
 
     return 0;
 }

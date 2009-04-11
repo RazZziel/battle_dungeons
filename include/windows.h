@@ -9,6 +9,6 @@ void generate_game_screen();
 void message(const char *fmt, ...);
 void destroy_win(WINDOW *window);
 void get_focus(WINDOW *window);
-void loose_focus(WINDOW  *window);
+void drop_focus(WINDOW *window);
 
 #endif /* WINDOWS_H */

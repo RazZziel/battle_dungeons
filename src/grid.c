@@ -113,15 +113,15 @@ void create_first_combat_grid(grid_t *grid, pj_t *pj, pj_t *enemy)
 
 grid_node_t *grid_node(grid_t *grid, int y, int x)
 {
-    return grid->grid+y*grid->width+x;
+    return grid->grid + (y * grid->width) + (x);
 }
 
 void new_grid(grid_t **grid, int height, int width)
 {
-    *grid = (grid_t*)malloc(sizeof(grid_t));
+    *grid = malloc(sizeof(grid_t));
     (*grid)->height = height;
     (*grid)->width = width;
-    (*grid)->grid = (grid_node_t*)malloc(height*width*sizeof(grid_node_t));
+    (*grid)->grid = malloc(height*width*sizeof(grid_node_t));
 }
 
 void draw_node (grid_t *grid, int y, int x)

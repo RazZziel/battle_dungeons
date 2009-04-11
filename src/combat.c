@@ -17,6 +17,7 @@
 #include "colors.h"
 #include "character.h"
 #include "global.h"
+#include "scripting.h"
 
 extern game_engine_t game;
 
@@ -48,7 +49,7 @@ void attack(pj_t *pj, pj_t *enemy)
     //    message( "%s%s se ríe de ti...\n", enemy->prefix, enemy->name );
     //  else if (critico)
     //    message( "¡¡Le asestas un golpe mortal a%s%s!!\n", enemy->prefix, enemy->name );
-    hit = 6;
+    hit = 0;//6;
     enemy->pg -= hit;
 }
 
@@ -285,8 +286,8 @@ void test_combat(pj_t *pj, pj_t *enemy)
     erase();
 
     generate_game_screen();
-    new_grid( &game.grid[0], LINES-7, COLS );
-    create_first_combat_grid( game.grid[0], pj, enemy );
+    //new_grid( &game.grid[0], LINES-7, COLS );
+    //create_first_combat_grid( game.grid[0], pj, enemy );
     keypad( game.game_win, TRUE );  
 
     draw_grid( game.grid[0], pj, enemy);
@@ -362,9 +363,10 @@ void new_combat()
     };
     int option, y=2;
 
-    assert(strlen(menu_options[(sizeof(menu_options) / sizeof(char *))-1]) == 0);
+    assert( strlen(menu_options[(sizeof(menu_options) / sizeof(char *))-1]) == 0 );
 
-    pj = (pj_t*)malloc(sizeof(pj_t));
+    pj = malloc(sizeof(pj_t));
+#if 0
     pj_selection_menu_win = newwin( 15, 40, LINES*3/4-20, COLS/2-40);
     get_focus(pj_selection_menu_win);
     wattron(pj_selection_menu_win, COLOR_PAIR(30));
@@ -374,13 +376,15 @@ void new_combat()
     mvwprintw( pj_selection_menu_win, 4, 2, "Race   :" ); //scanf( "%c", *pj->raza );
 
     wgetch(pj_selection_menu_win);
-    loose_focus(pj_selection_menu_win);
-  
-    enemy = (pj_t*)malloc(sizeof(pj_t));
+    drop_focus(pj_selection_menu_win);
+#endif
+    enemy = malloc(sizeof(pj_t));
+#if 0
     enemy_selection_menu_win = newwin( 10, 29, LINES/2-10, COLS/2-4);
     get_focus( enemy_selection_menu_win );
     wattron(enemy_selection_menu_win, COLOR_PAIR(30)); 
     mvwprintw( enemy_selection_menu_win, 1, 3, "Select enemy:" );
+#endif
 
     pj->name = "Raziel";
     pj->color = 10;
@@ -391,7 +395,10 @@ void new_combat()
     enemy->color = 40;
     enemy->avatar = 'Z';
     enemy->pg = 10;
-
+    pj->x = pj->y = 1;
+    enemy->x = enemy->y = -1;
+    test_combat( pj, enemy );
+#if 0
     option = menu( enemy_selection_menu_win, y+2, menu_options, MAIN_MENU_PAIR );
     switch( option )
     {
@@ -401,7 +408,7 @@ void new_combat()
         break;
     case 2:
         //enemigo_aleatorio( enemy );
-        test_combat( pj, enemy );
+        test_combat( enemy, pj );
         break;
     default:
         break;
@@ -409,4 +416,5 @@ void new_combat()
 
     destroy_win(pj_selection_menu_win);
     destroy_win(enemy_selection_menu_win);
+#endif
 }

@@ -1,6 +1,9 @@
 %{
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include "battle.h"
+#include "scripting.h"
 
 #define YYERROR_VERBOSE
 
@@ -8,6 +11,12 @@ extern char* yytext;
 extern int yyget_lineno();
 extern int yylex();
 extern int yyerror(char*);
+
+extern game_engine_t game;
+extern game_parser_t parser;
+
+void *check_cache_size( void *cache, int cache_lines,
+                        int *cache_size, int element_size );
 
 int mapflag=0;
 char *yyfilename=NULL;
@@ -17,6 +26,7 @@ char *yyfilename=NULL;
 %union {
     int val;
     char *str;
+    char car;
 }
 
 %expect 34
@@ -33,23 +43,118 @@ char *yyfilename=NULL;
 %token MAP WITH MATERIAL ENTITY ACTION
 %token EXTENDS
 %token EQ_ADD EQ_SUB EQ_MUL EQ_DIV
-%token <val> TRUE FALSE MAYBE
+%token <val> B_TRUE B_FALSE B_MAYBE
 %token ON_TOUCH ON_INTERACT
 
 %%
 
 input: definition input | definition;
-definition: map_definition | entity_definition | action_definition | material_definition;
+definition:
+	  map_definition
+	| entity_definition
+	| action_definition
+	| material_definition
+	| map_rule
+          {
+              parser.rule_cache_global_lines++;
+          }
+	;
 
 /* Maps */
 
 map_definition: MAP IDENTIFIER map_blocks;
-map_blocks: map_block ',' map_blocks | map_block;
-map_block: '{' map_content '}' map_block_rules;
+
+map_blocks: map_blocks ',' map_block
+	{
+#if 0
+            int j;
+            for (j=0; j<parser.str_cache_lines; j++)
+                printf("%s\n", parser.str_cache[j]);
+            for (j=0; j<parser.rule_cache_lines; j++)
+                printf("%c=%s\n", parser.rule_cache[j].tile, parser.rule_cache[j].name);
+#endif
+	}
+	| map_block
+	{
+            //printf("1\n");
+            /* Build map.
+             * - Check if all tiles correspond to either a rule
+             *   in cache or a permanent rule.
+             * - Fill the grid with the appropiate data */
+            int i, j, k;
+
+#if 1
+            new_grid( &game.grid[parser.map_number], LINES-7, COLS );
+#else
+            new_grid( &game.grid[parser.map_number], parser.str_cache_lines, strlen(parser.str_cache[0]) );
+#endif
+#if 0
+            for (j=0; j<parser.str_cache_lines; j++)
+                printf("%s\n", parser.str_cache[j]);
+            for (j=0; j<parser.rule_cache_lines; j++)
+                printf("%c=%s\n", parser.rule_cache[j].tile, parser.rule_cache[j].name);
+#endif
+            for (j=0; j<parser.str_cache_lines; j++)
+            {
+                for (i=0; i<strlen(parser.str_cache[0]); i++)
+                {
+                    if (parser.str_cache[j][i] == '\0') break;
+                    for (k=0; (k < parser.rule_cache_lines) && (parser.rule_cache[k].tile != parser.str_cache[j][i]); k++);
+                    if (k == parser.rule_cache_lines)
+                        parser.str_cache[j][i] = '?';
+
+                    int span_x = game.grid[parser.map_number]->width / strlen(parser.str_cache[0]),
+                        span_y = game.grid[parser.map_number]->height / parser.str_cache_lines,
+                        si, sj;
+                    for (sj=0; sj<span_y; sj++)
+                    {
+                        for (si=0; si<span_x; si++)
+                        {
+                            grid_node(game.grid[parser.map_number], span_y*j+sj, span_x*i+si)->type = parser.str_cache[j][i];
+                            grid_node(game.grid[parser.map_number], span_y*j+sj, span_x*i+si)->color = TER_GRASS_COLOR;
+                            grid_node(game.grid[parser.map_number], span_y*j+sj, span_x*i+si)->solid = FALSE;
+                            grid_node(game.grid[parser.map_number], span_y*j+sj, span_x*i+si)->visible = TRUE;
+                        }
+                    }
+                }
+            }
+            parser.map_number++;
+	}
+	;
+map_block: '{'
+	{
+            parser.str_cache_lines = 0;
+	} 
+	map_content '}'
+	{
+            parser.rule_cache_lines = parser.rule_cache_global_lines;
+	}
+	map_block_rules
+	;
 map_block_rules: | WITH '{' map_rules '}';
-map_content: STRING map_content | STRING;
+map_content: map_line map_content | map_line;
+
+map_line: STRING
+	{
+            /* Populate cache with map lines */
+            parser.str_cache = check_cache_size( parser.str_cache, parser.str_cache_lines,
+                                                 &parser.str_cache_size, sizeof(*parser.str_cache) );
+            parser.str_cache[parser.str_cache_lines++] = yylval.str;
+	}
+	;
 map_rules: map_rule map_rules | map_rule;
-map_rule: MAP_TILE '=' map_tile_type;
+map_rule: MAP_TILE
+	{
+            parser.rule_cache = check_cache_size( parser.rule_cache, parser.rule_cache_lines,
+                                                  &parser.rule_cache_size, sizeof(*parser.rule_cache) );
+            parser.rule_cache[parser.rule_cache_lines].tile = yylval.car;
+	}
+	'=' map_tile_type
+	{
+            /* Populate cache with rules */
+            parser.rule_cache[parser.rule_cache_lines++].name = yylval.str;
+	}
+	;
 map_tile_type: MATERIAL IDENTIFIER
 	| ENTITY IDENTIFIER
 	| ACTION action_trigger function_id
@@ -100,7 +205,7 @@ expression: IDENTIFIER
 	| '(' expression ')'
 	| MAP_TILE
 	;
-exp_logical: TRUE | FALSE | MAYBE
+exp_logical: B_TRUE | B_FALSE | B_MAYBE
 	| exp_logical "||" exp_logical  { $$ = ( $1 || $3 ); }
 	| exp_logical "&&" exp_logical  { $$ = ( $1 && $3 ); }
 	| exp_logical "==" exp_logical  { $$ = ( $1 == $3 ); }
@@ -121,9 +226,9 @@ expression_list: | expression ',' expression_list | expression;
 statement: st_assignment | st_declaration | function_id;
 st_assignment: lvalue '=' expression
 	| lvalue EQ_ADD exp_int  { $<val>1 = ( $<val>1 + $<val>3 ); }
-	| lvalue EQ_SUB  exp_int  { $<val>1 = ( $<val>1 - $<val>3 ); }
+	| lvalue EQ_SUB exp_int  { $<val>1 = ( $<val>1 - $<val>3 ); }
 	| lvalue EQ_MUL exp_int  { $<val>1 = ( $<val>1 * $<val>3 ); }
-	| lvalue EQ_DIV  exp_int  { $<val>1 = ( $<val>1 / $<val>3 ); }
+	| lvalue EQ_DIV exp_int  { $<val>1 = ( $<val>1 / $<val>3 ); }
 	;
 st_declaration: type IDENTIFIER;
 type: "int" | "string" | "bool";
@@ -136,4 +241,15 @@ int yyerror(char *s)
 {
     fprintf( stderr, "%s:%d:[\"%s\"] %s\n", yyfilename, yyget_lineno(), yytext, s );
     return 0;
+}
+
+void *check_cache_size( void *cache, int cache_lines,
+                        int *cache_size, int element_size )
+{
+    if (cache_lines > (*cache_size)-1)
+    {
+        (*cache_size) *= 2;
+        cache = realloc(cache, (*cache_size) * element_size);
+    }
+    return cache;
 }

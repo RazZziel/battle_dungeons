@@ -3,12 +3,12 @@
 
 #include "character.h"
 
-typedef struct {
+typedef struct grid_node_tm {
     char type;
     int color;
     int solid; /* boolean */
     int visible;
-    int special;
+    struct grid_node_tm *above;
 } grid_node_t;
 
 typedef struct {

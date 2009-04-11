@@ -39,7 +39,7 @@ void get_focus (WINDOW *window)
   wrefresh(window);
 }
 
-void loose_focus (WINDOW  *window)
+void drop_focus (WINDOW  *window)
 {
   wattron(window, COLOR_PAIR(40));
   wborder(window, ' ', ' ', ' ', ' ', '/', '\\', '\\', '/');
