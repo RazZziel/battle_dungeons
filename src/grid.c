@@ -10,6 +10,9 @@
 
 extern game_engine_t game;
 
+inline int center_x(grid_t *grid, int x) { return x + ((game.game_win->_maxx - grid->width) / 2); }
+inline int center_y(grid_t *grid, int y) { return y + ((game.game_win->_maxy - grid->height) / 2); }
+
 void visibility_area(grid_t *grid, pj_t *pj)
 {
     int j, i;
@@ -149,11 +152,11 @@ inline void draw_node(grid_t *grid, int y, int x)
              node->above != NULL;
              node = grid_node(grid, y, x)->above);
         wattron( game.game_win, COLOR_PAIR(node->color) );
-        mvwprintw( game.game_win, y, x, "%c", node->type );
+        mvwprintw( game.game_win, center_y(grid,y), center_x(grid,x), "%c", node->type );
     }
     else
     {
-        mvwprintw( game.game_win, y, x, " " );
+        mvwprintw( game.game_win, center_y(grid,y), center_x(grid,x), " " );
     }
 }
 
@@ -162,7 +165,7 @@ inline void draw_pj(grid_t *grid, pj_t *pj)
     if (grid_node(grid, pj->y, pj->x)->visible)
     {
         wattron( game.game_win, COLOR_PAIR(pj->color) );
-        mvwprintw( game.game_win, pj->y, pj->x, "%c", pj->avatar );
+        mvwprintw( game.game_win, center_y(grid,pj->y), center_x(grid,pj->x), "%c", pj->avatar );
         wrefresh( game.game_win );
     }
 }

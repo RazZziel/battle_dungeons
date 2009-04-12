@@ -76,7 +76,7 @@ map_blocks: map_block
             int i, j, k;
 
 #if 0
-            new_grid( &game.grid[parser.map_number], LINES-7, COLS );
+            new_grid( &game.grid[parser.map_number], LINES-7, COLS ); /* TODO game.game_win->_maxx, parse after creating game_win */
 #else
             new_grid( &game.grid[parser.map_number], parser.str_cache_lines, strlen(parser.str_cache[0]) );
 #endif
