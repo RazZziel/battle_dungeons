@@ -48,7 +48,7 @@ char *yyfilename=NULL;
 
 %%
 
-input: definition input | definition;
+input: definition | input definition;
 definition:
 	  map_definition
 	| entity_definition
@@ -64,19 +64,8 @@ definition:
 
 map_definition: MAP IDENTIFIER map_blocks;
 
-map_blocks: map_blocks ',' map_block
+map_blocks: map_block
 	{
-#if 0
-            int j;
-            for (j=0; j<parser.str_cache_lines; j++)
-                printf("%s\n", parser.str_cache[j]);
-            for (j=0; j<parser.rule_cache_lines; j++)
-                printf("%c=%s\n", parser.rule_cache[j].tile, parser.rule_cache[j].name);
-#endif
-	}
-	| map_block
-	{
-            //printf("1\n");
             /* Build map.
              * - Check if all tiles correspond to either a rule
              *   in cache or a permanent rule.
@@ -120,11 +109,22 @@ map_blocks: map_blocks ',' map_block
             }
             parser.map_number++;
 	}
+	| map_blocks ',' map_block
+	{
+#if 0
+            int j;
+            for (j=0; j<parser.str_cache_lines; j++)
+                printf("%s\n", parser.str_cache[j]);
+            for (j=0; j<parser.rule_cache_lines; j++)
+                printf("%c=%s\n", parser.rule_cache[j].tile, parser.rule_cache[j].name);
+#endif
+	}
 	;
+
 map_block: '{'
 	{
             parser.str_cache_lines = 0;
-	} 
+	}
 	map_content '}'
 	{
             parser.rule_cache_lines = parser.rule_cache_global_lines;
@@ -132,7 +132,7 @@ map_block: '{'
 	map_block_rules
 	;
 map_block_rules: | WITH '{' map_rules '}';
-map_content: map_line map_content | map_line;
+map_content: map_line | map_content map_line;
 
 map_line: STRING
 	{
@@ -142,7 +142,7 @@ map_line: STRING
             parser.str_cache[parser.str_cache_lines++] = yylval.str;
 	}
 	;
-map_rules: map_rule map_rules | map_rule;
+map_rules: map_rule | map_rule map_rules;
 map_rule: MAP_TILE
 	{
             parser.rule_cache = check_cache_size( parser.rule_cache, parser.rule_cache_lines,
@@ -165,34 +165,26 @@ function_id: IDENTIFIER '(' expression_list ')'
 
 entity_definition: ENTITY IDENTIFIER entity_hierarchy '{' entity_content '}'
 	;
-entity_content: entity_line entity_content | entity_line
+entity_content: entity_line | entity_content entity_line
 	;
 entity_line: st_assignment
 	| action_trigger '=' function_id
 	;
-entity_hierarchy: | EXTENDS '(' superclass_list ')'
-	;
-superclass_list: IDENTIFIER ',' superclass_list | IDENTIFIER
-	;
+entity_hierarchy: | EXTENDS '(' superclass_list ')';
+superclass_list: IDENTIFIER | superclass_list ',' IDENTIFIER;
 
 /* Actions */
 
-action_definition: ACTION function_id '{' action_content '}'
-	;
-action_content: action_line action_content | action_line
-	;
-action_line: statement
-	;
+action_definition: ACTION function_id '{' action_content '}';
+action_content: action_line | action_content action_line;
+action_line: statement;
 action_trigger: ON_TOUCH | ON_INTERACT;
 
 /* Materials */
 
-material_definition: MATERIAL IDENTIFIER '{' material_content '}'
-	;
-material_content: material_line material_content | material_line
-	;
-material_line: st_assignment
-	;
+material_definition: MATERIAL IDENTIFIER '{' material_content '}';
+material_content: material_line | material_content material_line;
+material_line: st_assignment;
 
 
 expression: IDENTIFIER
