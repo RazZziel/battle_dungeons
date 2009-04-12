@@ -13,4 +13,7 @@ lex.yy.c lex.yy.h: scripting.l
 	$(LEX) --header-file=lex.yy.h $<
 
 clean-generic:
-	-rm -f y.tab.c y.tab.h lex.yy.c lex.yy.h
+	-rm -f y.tab.c y.tab.h lex.yy.c lex.yy.h bleh.txt
+
+check: all
+	valgrind battle_dungeons 2> bleh.txt; cat bleh.txt

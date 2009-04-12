@@ -15,7 +15,10 @@ map section00 {
 	' ' = material floor000
 	'#' = material wall666 # must override wall000
 }, {
-	"lol internet"
+	""
+	" ..."
+	" ..."
+	" ..."
 }, {
 	""
 	" @   3"

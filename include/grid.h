@@ -3,12 +3,12 @@
 
 #include "character.h"
 
-typedef struct grid_node_tm {
+typedef struct grid_node_s {
     char type;
     int color;
     int solid; /* boolean */
     int visible;
-    struct grid_node_tm *above;
+    struct grid_node_s *above;
 } grid_node_t;
 
 typedef struct {
@@ -30,6 +30,6 @@ void new_grid(grid_t **grid, int height, int width);
 void draw_node (grid_t *grid, int y, int x);
 void draw_pj (grid_t *grid, pj_t *pj);
 void draw_grid (grid_t *grid, pj_t *pj, pj_t *enemy);
-
+void init_node(grid_node_t *node, int type, int color, bool solid, bool visible);
 
 #endif /* GRID_H */

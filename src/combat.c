@@ -233,22 +233,16 @@ int pj_round (pj_t *pj, pj_t *enemy)
 
 int enemy_round(pj_t *pj, pj_t *enemy)
 {
-    int vertical, horizontal;
+    int vertical   = ((pj->y)-(enemy->y)),
+        horizontal = ((pj->x)-(enemy->x));
 
-    vertical=((pj->y)-(enemy->y));
-    horizontal=((pj->x)-(enemy->x));
+    if (vertical>0)        vertical = 1;
+    else if (vertical<0)   vertical =-1;
+    else                   vertical = 0;
 
-    if (vertical>0)
-        vertical=1;
-    else if (vertical<0)
-        vertical=-1;
-    else vertical=0;
-
-    if (horizontal>0)
-        horizontal=1;
-    else if (horizontal<0)
-        horizontal=-1;
-    else horizontal=0;
+    if (horizontal>0)      horizontal = 1;
+    else if (horizontal<0) horizontal =-1;
+    else                   horizontal = 0;
 
     if (enemy->pg<5) {
         horizontal = -horizontal;
@@ -391,12 +385,15 @@ void new_combat()
     pj->avatar = '@';
     pj->pg = 30; pj->pg_max = 30;
     pj->mp = 13; pj->mp_max = 13;
+    pj->level = pj->exp = 0;
+    pj->playable = pj->status.dead = pj->status.drunk = pj->status.blind = 0;
     enemy->name = "Zarovich";
     enemy->color = 40;
     enemy->avatar = 'Z';
     enemy->pg = 10;
+    enemy->playable = enemy->status.dead = enemy->status.drunk = enemy->status.blind = 0;
     pj->x = pj->y = 1;
-    enemy->x = enemy->y = -1;
+    enemy->x = enemy->y = 5;
     test_combat( pj, enemy );
 #if 0
     option = menu( enemy_selection_menu_win, y+2, menu_options, MAIN_MENU_PAIR );

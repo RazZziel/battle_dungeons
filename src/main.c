@@ -166,9 +166,9 @@ void main_menu()
 int main(int argc, const char *argv[])
 {
     atexit(quit);
-    //init(argc, argv);
+    init(argc, argv);
     parse_script(SCRIPT_MAPS);
-    return 0;
+    //return 0;
 
     //intro();
 #if 0

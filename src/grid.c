@@ -33,6 +33,7 @@ void visibility_area(grid_t *grid, pj_t *pj)
 
 }
 
+#if 0 /* REMOVE */
 void create_first_combat_grid(grid_t *grid, pj_t *pj, pj_t *enemy)
 {
     int i, j;
@@ -110,35 +111,53 @@ void create_first_combat_grid(grid_t *grid, pj_t *pj, pj_t *enemy)
     visibility_area(grid, pj);
 
 }
+#endif
 
-grid_node_t *grid_node(grid_t *grid, int y, int x)
+inline grid_node_t *grid_node(grid_t *grid, int y, int x)
 {
     return grid->grid + (y * grid->width) + (x);
 }
 
 void new_grid(grid_t **grid, int height, int width)
 {
-    *grid = malloc(sizeof(grid_t));
+    (*grid) = malloc( sizeof(grid_t) );
     (*grid)->height = height;
     (*grid)->width = width;
-    (*grid)->grid = malloc(height*width*sizeof(grid_node_t));
+    (*grid)->grid = malloc( height * width * sizeof(grid_node_t) );
 }
 
-void draw_node (grid_t *grid, int y, int x)
+inline void init_node(grid_node_t *node,
+                      int type, int color,
+                      bool solid, bool visible)
+{
+    node->type = type;
+    node->color = color;
+    node->solid = solid;
+    node->visible = visible;
+    node->above = NULL;
+}
+
+inline void draw_node(grid_t *grid, int y, int x)
 {
     if (grid_node(grid, y, x)->visible)
     {
-        wattron( game.game_win, COLOR_PAIR(grid_node(grid, y, x)->color) );
-        mvwprintw( game.game_win, y, x, "%c", grid_node(grid, y, x)->type );
+        grid_node_t *node;
+        /* Traverse list of superimposed tiles, as in ncurses
+           we don't need to render them in order.
+           Probably should reverse list order. */
+        for (node = grid_node(grid, y, x);
+             node->above != NULL;
+             node = grid_node(grid, y, x)->above);
+        wattron( game.game_win, COLOR_PAIR(node->color) );
+        mvwprintw( game.game_win, y, x, "%c", node->type );
     }
     else
     {
         mvwprintw( game.game_win, y, x, " " );
     }
-    wrefresh( game.game_win );
 }
 
-void draw_pj (grid_t *grid, pj_t *pj)
+inline void draw_pj(grid_t *grid, pj_t *pj)
 {
     if (grid_node(grid, pj->y, pj->x)->visible)
     {
@@ -148,29 +167,20 @@ void draw_pj (grid_t *grid, pj_t *pj)
     }
 }
 
-void draw_grid (grid_t *grid, pj_t *pj, pj_t *enemy)
+void draw_grid(grid_t *grid, pj_t *pj, pj_t *enemy)
 {
     int j, i;
   
-    for ( j=0; j<grid->height; j++)     /* Y */
+    for ( j=0; j<grid->height; j++)       /* Y */
     {
         for ( i=0; i<grid->width; i++)    /* X */
         {
-            if (grid_node(grid, j, i)->visible)
-            {
-                wattron( game.game_win, COLOR_PAIR(grid_node(grid, j, i)->color) );
-                mvwprintw( game.game_win, j, i, "%c", grid_node(grid, j, i)->type );
-            }
+            draw_node(grid, j, i);
         }
     }
 
-    wattron( game.game_win, COLOR_PAIR(10) );
-    mvwprintw( game.game_win, pj->y, pj->x, "%c", pj->avatar );
-    if (grid_node(grid, enemy->y, enemy->x)->visible)
-    {
-        wattron( game.game_win, COLOR_PAIR(40) );
-        mvwprintw( game.game_win, enemy->y, enemy->x, "%c", enemy->avatar );
-    }
+    draw_pj(grid, pj);
+    draw_pj(grid, enemy);
 
     wrefresh( game.game_win );
 }
