@@ -231,7 +231,7 @@ int pj_round (pj_t *pj, pj_t *enemy)
     return FALSE; /* default = FALSE */
 }
 
-int enemy_round(pj_t *pj, pj_t *enemy)
+bool enemy_round(pj_t *pj, pj_t *enemy)
 {
     int vertical   = ((pj->y)-(enemy->y)),
         horizontal = ((pj->x)-(enemy->x));
@@ -244,15 +244,24 @@ int enemy_round(pj_t *pj, pj_t *enemy)
     else if (horizontal<0) horizontal =-1;
     else                   horizontal = 0;
 
-    if (enemy->pg<5) {
+    if (enemy->pg<5)
+    {
         horizontal = -horizontal;
         vertical = -vertical;
     }
 
-    if (grid_node(game.grid[0], pj->y+vertical, pj->x)->solid)
-        vertical=0;
-    if (grid_node(game.grid[0], pj->y+vertical, pj->x+horizontal)->solid)
-        horizontal=0;
+    if ( (pj->y+vertical < 0) ||
+         (pj->y+vertical >= game.grid[0]->height) ||
+         (grid_node(game.grid[0], pj->y+vertical, pj->x)->solid) )
+    {
+        vertical = 0;
+    }
+    if ( (pj->y+horizontal < 0) ||
+         (pj->y+horizontal >= game.grid[0]->width) ||
+         (grid_node(game.grid[0], pj->y, pj->x+horizontal)->solid) )
+    {
+        horizontal = 0;
+    }
 
     walk(game.grid[0], horizontal, vertical, enemy, pj);
 

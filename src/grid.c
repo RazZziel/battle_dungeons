@@ -142,15 +142,23 @@ inline void init_node(grid_node_t *node,
 
 inline void draw_node(grid_t *grid, int y, int x)
 {
-    if (grid_node(grid, y, x)->visible)
+    /* Traverse list of superimposed tiles, as in ncurses
+       we don't need to render them in order.
+       TODO: Probably should reverse list order. */
+    grid_node_t *node = NULL;
+    grid_node_t *iter;
+    for ( iter = grid_node(grid, y, x);
+          iter != NULL;
+          iter = iter->above )
     {
-        grid_node_t *node;
-        /* Traverse list of superimposed tiles, as in ncurses
-           we don't need to render them in order.
-           Probably should reverse list order. */
-        for (node = grid_node(grid, y, x);
-             node->above != NULL;
-             node = grid_node(grid, y, x)->above);
+        if ( iter->visible )
+        {
+            node = iter;
+        }
+    }
+
+    if (node != NULL)
+    {
         wattron( game.game_win, COLOR_PAIR(node->color) );
         mvwprintw( game.game_win, center_y(grid,y), center_x(grid,x), "%c", node->type );
     }
