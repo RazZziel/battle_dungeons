@@ -13,8 +13,10 @@
  * Data files
  */
 
-#define DATA_DIR      "../data/"
-#define SCRIPT_MAPS   DATA_DIR "maps.rpg"
+#define DATA_DIR          "../data/"
+#define SCRIPT_ENTITIES   DATA_DIR"entities.rpg"
+#define SCRIPT_MATERIALS  DATA_DIR"materials.rpg"
+#define SCRIPT_MAPS       DATA_DIR"maps.rpg"
 
 #define max(a,b) ((a) > (b) ? (a) : (b))
 #define min(x,y) ((x) < (y) ? (x) : (y))

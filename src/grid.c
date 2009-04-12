@@ -10,21 +10,20 @@
 
 extern game_engine_t game;
 
-inline int center_x(grid_t *grid, int x) { return x + ((game.game_win->_maxx - grid->width) / 2); }
-inline int center_y(grid_t *grid, int y) { return y + ((game.game_win->_maxy - grid->height) / 2); }
+static inline int center_x(grid_t *grid, int x) { return x + ((game.game_win->_maxx - grid->width) / 2); }
+static inline int center_y(grid_t *grid, int y) { return y + ((game.game_win->_maxy - grid->height) / 2); }
 
 void visibility_area(grid_t *grid, pj_t *pj)
 {
-    int j, i;
     /*  for (j=max(0, (pj->y)-10); j<min(LINES-7, (pj->y)+11); j++)
         for (i=max(0, (pj->x)-10); i<min(COLS, (pj->x)+11); i++) {
         grid_node(grid, j, i)->visible = TRUE;
         draw_node(grid, j, i);
         }*/
 
-    for (j=max(0, (pj->y)-10); j<min(LINES-7, (pj->y)+11); j++)
+    for (int j=max(0, (pj->y)-10); j<min(LINES-7, (pj->y)+11); j++)
     {
-        for (i=max(0, (pj->x)-10); i<min(COLS, (pj->x)+11); i++)
+        for (int i=max(0, (pj->x)-10); i<min(COLS, (pj->x)+11); i++)
         {
             if ( pow(i-(pj->x), 2) + pow(j-(pj->y), 2) <= pow(5, 2) && !grid_node(grid, j, i)->visible)
             {
@@ -116,7 +115,7 @@ void create_first_combat_grid(grid_t *grid, pj_t *pj, pj_t *enemy)
 }
 #endif
 
-inline grid_node_t *grid_node(grid_t *grid, int y, int x)
+grid_node_t *grid_node(grid_t *grid, int y, int x)
 {
     return grid->grid + (y * grid->width) + (x);
 }
@@ -127,17 +126,6 @@ void new_grid(grid_t **grid, int height, int width)
     (*grid)->height = height;
     (*grid)->width = width;
     (*grid)->grid = malloc( height * width * sizeof(grid_node_t) );
-}
-
-inline void init_node(grid_node_t *node,
-                      int type, int color,
-                      bool solid, bool visible)
-{
-    node->type = type;
-    node->color = color;
-    node->solid = solid;
-    node->visible = visible;
-    node->above = NULL;
 }
 
 inline void draw_node(grid_t *grid, int y, int x)
@@ -160,7 +148,7 @@ inline void draw_node(grid_t *grid, int y, int x)
     if (node != NULL)
     {
         wattron( game.game_win, COLOR_PAIR(node->color) );
-        mvwprintw( game.game_win, center_y(grid,y), center_x(grid,x), "%c", node->type );
+        mvwprintw( game.game_win, center_y(grid,y), center_x(grid,x), "%c", node->tile );
     }
     else
     {
@@ -180,11 +168,9 @@ inline void draw_pj(grid_t *grid, pj_t *pj)
 
 void draw_grid(grid_t *grid, pj_t *pj, pj_t *enemy)
 {
-    int j, i;
-  
-    for ( j=0; j<grid->height; j++)       /* Y */
+    for (int j=0; j<grid->height; j++)       /* Y */
     {
-        for ( i=0; i<grid->width; i++)    /* X */
+        for (int i=0; i<grid->width; i++)    /* X */
         {
             draw_node(grid, j, i);
         }

@@ -30,6 +30,8 @@
 #include "scripting.h"
 #include "global.h"
 
+#define DEBUG_PARSER_
+
 void intro();
 void init(int argc, const char **argv);
 void quit();
@@ -92,19 +94,21 @@ void init(int argc, const char **argv)
     while ((rc = poptGetNextOpt(context)) > 0);
 
     /* Graphics */
-
+#ifndef DEBUG_PARSER
     initscr();             /* ncurses initialization */
     curs_set(0);           /* Invisible cursor */
     if (init_colors()==0)  /* Color initilization */
-        die(COLORS_ERROR, "", "", 0);
-
+        die( "Couldn't load colors\n" );
+#endif
     /* Etc */
 
     srandom((unsigned int) time(NULL));
+    init_parser();
 }
 
 void quit()
 {
+    free_parser();
     endwin();
 #if 0
     printf( "\n" );
@@ -167,8 +171,11 @@ int main(int argc, const char *argv[])
 {
     atexit(quit);
     init(argc, argv);
+    parse_script(SCRIPT_MATERIALS);
     parse_script(SCRIPT_MAPS);
-    //return 0;
+#ifdef DEBUG_PARSER
+    return 0;
+#endif
 
     //intro();
 #if 0

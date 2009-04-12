@@ -1,5 +1,5 @@
-'.' = material grass000
-'#' = material wall000
+',' = material grass
+'#' = material wall
 
 map section00 {
 	"#########################"
@@ -8,17 +8,17 @@ map section00 {
 	"## ### ### ### ### ### ##"
 	"#                        "
 	"## ### ### ### ### ### ##"
-	"#   #   #   #   #   #   #"
-	"#   #   #   #   #   #   #"
+	"#   #   #   #   #   #,,,#"
+	"#   #   #   #   #   #,,,#"
 	"#########################"
 } with {
-	' ' = material floor000
-	'#' = material wall666 # must override wall000
+	' ' = material road
+	'#' = material tree # must override wall000
 }, {
 	""
-	" ..."
-	" ..."
-	" ..."
+	" ,,,"
+	" ,,,"
+	"  , "
 }, {
 	""
 	" @   3"

@@ -1,4 +1,4 @@
-material water {
+material pj {
          tile = '@'
 }
 material road {
@@ -8,6 +8,7 @@ material road {
 material water {
          tile = '='
          color = blue
+         solid = true
 }
 material road {
          tile = '.'
@@ -21,14 +22,17 @@ material grass {
 material rock {
          tile = 'M'
          color = gray
+         solid = true
 }
 material wall {
          tile = '#'
          color = gray
+         solid = true
 }
 material tree {
          tile = 'T'
          color = green
+         solid = true
 }
 material door_open {
          tile = '/'

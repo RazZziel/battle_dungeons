@@ -1,13 +1,14 @@
 #ifndef GRID_H
 #define GRID_H
 
+#include "global.h"
 #include "character.h"
 
 typedef struct grid_node_s {
-    char type;
+    char tile;
     int color;
-    int solid; /* boolean */
-    int visible;
+    bool solid;
+    bool visible;
     struct grid_node_s *above;
 } grid_node_t;
 
@@ -25,11 +26,10 @@ typedef struct {
 
 void visibility_area(grid_t *grid, pj_t *pj);
 void create_first_combat_grid(grid_t *grid, pj_t *pj, pj_t *enemy);
-grid_node_t * grid_node(grid_t *grid, int y, int x);
 void new_grid(grid_t **grid, int height, int width);
-void draw_node (grid_t *grid, int y, int x);
-void draw_pj (grid_t *grid, pj_t *pj);
+void draw_pj(grid_t *grid, pj_t *pj);
 void draw_grid (grid_t *grid, pj_t *pj, pj_t *enemy);
-void init_node(grid_node_t *node, int type, int color, bool solid, bool visible);
+grid_node_t * grid_node(grid_t *grid, int y, int x);
+void draw_node(grid_t *grid, int y, int x);
 
 #endif /* GRID_H */

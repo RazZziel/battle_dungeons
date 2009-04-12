@@ -4,7 +4,7 @@ battle_dungeons_SOURCES = main.c windows.c menus.c ascii_art.c story.c \
                           y.tab.c lex.yy.c scripting.c
                           #enemies.c objetos.c
 battle_dungeons_LDADD = -lncurses -lpopt -lm -lfl -ly
-AM_CFLAGS = -Wall -I../include $(all_includes)
+AM_CFLAGS = -Wall -std=c99 -D_GNU_SOURCE -I../include $(all_includes)
 
 y.tab.c y.tab.h: scripting.y
 	$(YACC) -y -d $< -o $@
