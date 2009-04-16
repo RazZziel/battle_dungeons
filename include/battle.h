@@ -9,8 +9,14 @@
 
 
 typedef struct {
-    grid_t *grid[8];
-    WINDOW *message_win, *game_win, *stats_win;
+    grid_t *loaded_grids[8],
+        *current_grid;
+    WINDOW *message_win,
+        *game_win,
+        *stats_win;
+    pc_t pc,
+        *npcs;
+    int n_npcs;
 } game_engine_t;
 
 

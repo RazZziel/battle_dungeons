@@ -8,112 +8,29 @@
 #include "global.h"
 #include "battle.h"
 
-extern game_engine_t game;
+extern game_engine_t game;/* (Y) */
 
 static inline int center_x(grid_t *grid, int x) { return x + ((game.game_win->_maxx - grid->width) / 2); }
 static inline int center_y(grid_t *grid, int y) { return y + ((game.game_win->_maxy - grid->height) / 2); }
 
-void visibility_area(grid_t *grid, pj_t *pj)
+void visibility_area()
 {
-    /*  for (j=max(0, (pj->y)-10); j<min(LINES-7, (pj->y)+11); j++)
-        for (i=max(0, (pj->x)-10); i<min(COLS, (pj->x)+11); i++) {
-        grid_node(grid, j, i)->visible = TRUE;
-        draw_node(grid, j, i);
-        }*/
-
-    for (int j=max(0, (pj->y)-10); j<min(LINES-7, (pj->y)+11); j++)
+    for (int j=max(0, (game.pc.y)-game.pc.range_sight);
+         j<min(game.current_grid->height, (game.pc.y)+game.pc.range_sight);
+         j++)
     {
-        for (int i=max(0, (pj->x)-10); i<min(COLS, (pj->x)+11); i++)
+        for (int i=max(0, (game.pc.x)-game.pc.range_sight);
+             i<min(game.current_grid->width, (game.pc.x)+game.pc.range_sight);
+             i++)
         {
-            if ( pow(i-(pj->x), 2) + pow(j-(pj->y), 2) <= pow(5, 2) && !grid_node(grid, j, i)->visible)
+            if ( ((pow(i-(game.pc.x), 2) + pow(j-(game.pc.y), 2)) <= pow(game.pc.range_sight, 2)) &&
+                 (!grid_node(game.current_grid, j, i)->visible) )
             {
-                grid_node(grid, j, i)->visible = TRUE;
-                draw_node(grid, j, i);
+                grid_node(game.current_grid, j, i)->visible = TRUE;
             }
         }
     }
-
 }
-
-#if 0 /* REMOVE */
-void create_first_combat_grid(grid_t *grid, pj_t *pj, pj_t *enemy)
-{
-    int i, j;
-  
-    for (j=0; j<grid->height; j++)
-    {
-        for (i=2; i<grid->width-2; i++)
-        {
-            grid_node(grid, j, i)->type = TER_GRASS;
-            grid_node(grid, j, i)->color = TER_GRASS_COLOR;
-            grid_node(grid, j, i)->solid = FALSE;
-            grid_node(grid, j, i)->visible = FALSE;
-        }
-    }
-  
-    for (j=0; j<grid->height; j++)
-    {
-        grid_node(grid, j, 1)->type = OBS_WALL;
-        grid_node(grid, j, 1)->color = OBS_WALL_COLOR;
-        grid_node(grid, j, 1)->solid = TRUE;
-        grid_node(grid, j, 1)->visible = FALSE;
-    
-        grid_node(grid, j, grid->width-2)->type = OBS_WALL;
-        grid_node(grid, j, grid->width-2)->color = OBS_WALL_COLOR;
-        grid_node(grid, j, grid->width-2)->solid = TRUE;
-        grid_node(grid, j, grid->width-2)->visible = FALSE;
-    }
-  
-    for (j=1; j<=grid->height*3/4; j++)
-    {
-        grid_node(grid, j, grid->width/3)->type = OBS_WALL;
-        grid_node(grid, j, grid->width/3)->color = OBS_WALL_COLOR;
-        grid_node(grid, j, grid->width/3)->solid = TRUE;
-        grid_node(grid, j, grid->width/3)->visible = FALSE;
-    }
-    for (j=grid->height/4; j<grid->height; j++)
-    {
-        grid_node(grid, j, grid->width*2/3)->type = OBS_WALL;
-        grid_node(grid, j, grid->width*2/3)->color = OBS_WALL_COLOR;
-        grid_node(grid, j, grid->width*2/3)->solid = TRUE;
-        grid_node(grid, j, grid->width*2/3)->visible = FALSE;
-    }
-
-    for (i=1; i<grid->width-2; i++)
-    {
-        grid_node(grid, 0, i)->type = OBS_WALL;
-        grid_node(grid, 0, i)->color = OBS_WALL_COLOR;
-        grid_node(grid, 0, i)->solid = TRUE;
-        grid_node(grid, 0, i)->visible = FALSE;
-
-        grid_node(grid, grid->height-1, i)->type = OBS_WALL;
-        grid_node(grid, grid->height-1, i)->color = OBS_WALL_COLOR;
-        grid_node(grid, grid->height-1, i)->solid = TRUE;
-        grid_node(grid, grid->height-1, i)->visible = FALSE;
-    }
-
-    do
-    {
-        enemy->x = rand()%(grid->width-1)+1;
-        enemy->y = rand()%(grid->height/2-1)+1;
-    }
-    while (grid_node(grid, enemy->y, enemy->x)->solid);
-
-    do
-    {
-        pj->x = rand()%(grid->width-1)+1;
-        pj->y = rand()%(grid->height/2-1) + 1 + (grid->height/2);
-    }
-    while (grid_node(grid, enemy->y, enemy->x)->solid);
-
-    pj->status.blind=0;
-    pj->playable=1;
-    enemy->playable=0;
-
-    visibility_area(grid, pj);
-
-}
-#endif
 
 grid_node_t *grid_node(grid_t *grid, int y, int x)
 {
@@ -128,14 +45,14 @@ void new_grid(grid_t **grid, int height, int width)
     (*grid)->grid = malloc( height * width * sizeof(grid_node_t) );
 }
 
-inline void draw_node(grid_t *grid, int y, int x)
+inline void draw_node(int y, int x)
 {
     /* Traverse list of superimposed tiles, as in ncurses
        we don't need to render them in order.
        TODO: Probably should reverse list order. */
     grid_node_t *node = NULL;
     grid_node_t *iter;
-    for ( iter = grid_node(grid, y, x);
+    for ( iter = grid_node(game.current_grid, y, x);
           iter != NULL;
           iter = iter->above )
     {
@@ -148,36 +65,34 @@ inline void draw_node(grid_t *grid, int y, int x)
     if (node != NULL)
     {
         wattron( game.game_win, COLOR_PAIR(node->color) );
-        mvwprintw( game.game_win, center_y(grid,y), center_x(grid,x), "%c", node->tile );
+        mvwprintw( game.game_win, center_y(game.current_grid,y), center_x(game.current_grid,x), "%c", node->tile );
     }
     else
     {
-        mvwprintw( game.game_win, center_y(grid,y), center_x(grid,x), " " );
+        mvwprintw( game.game_win, center_y(game.current_grid,y), center_x(game.current_grid,x), " " );
     }
 }
 
-inline void draw_pj(grid_t *grid, pj_t *pj)
+inline void draw_pc(pc_t *pc)
 {
-    if (grid_node(grid, pj->y, pj->x)->visible)
+    if (grid_node(game.current_grid, pc->y, pc->x)->visible)
     {
-        wattron( game.game_win, COLOR_PAIR(pj->color) );
-        mvwprintw( game.game_win, center_y(grid,pj->y), center_x(grid,pj->x), "%c", pj->avatar );
+        wattron( game.game_win, COLOR_PAIR(pc->color) );
+        mvwprintw( game.game_win, center_y(game.current_grid, pc->y),
+                   center_x(game.current_grid,pc->x), "%c", pc->avatar );
         wrefresh( game.game_win );
     }
 }
 
-void draw_grid(grid_t *grid, pj_t *pj, pj_t *enemy)
+void draw_grid()
 {
-    for (int j=0; j<grid->height; j++)       /* Y */
+    for (int j=0; j<game.current_grid->height; j++)       /* Y */
     {
-        for (int i=0; i<grid->width; i++)    /* X */
+        for (int i=0; i<game.current_grid->width; i++)    /* X */
         {
-            draw_node(grid, j, i);
+            draw_node(j, i);
         }
     }
-
-    draw_pj(grid, pj);
-    draw_pj(grid, enemy);
 
     wrefresh( game.game_win );
 }

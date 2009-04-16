@@ -40,7 +40,7 @@ on_interact { return ON_INTERACT; }
 
 true                     { yylval.val = 1; return B_TRUE; }
 false                    { yylval.val = 0; return B_FALSE; }
-maybe(\({DIGIT}+\))?     { yylval.val = 123; return B_MAYBE; }
+maybe(\({DIGIT}+\))?     { yylval.val = 123;/*FIXME*/ return B_MAYBE; }
 
 
 '.' { yylval.car = yytext[1]; return MAP_TILE; }

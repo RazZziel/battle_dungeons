@@ -51,7 +51,7 @@ typedef struct {
     char avatar;
     enum gender_t gender;          /* genero               */
     enum race_t race;              /* raza                 */
-    enum class_t class_;            /* clase                */
+    enum class_t class_;           /* clase                */
     enum alignment_t1 alignment1;  /* alineamiento (1)     */
     enum alignment_t2 alignment2;  /* alineamiento (2)     */
     char deity;                    /* deidad               */
@@ -67,25 +67,24 @@ typedef struct {
     int cha;                       /* carisma              */
 
     int size;                      /* tamanyo              */
-    int pg;                        /*                      */
-    int pg_max;                    /*                      */
+    int hp;                        /*                      */
+    int hp_max;                    /*                      */
     int mp;                        /* puntos de magia      */
     int mp_max;                    /* puntos de magia      */
     int speed;                     /* velocidad            */
     struct {
-        int alive;
-        int dead;
-        int undead;
-        int poissoned;
-        int drunk;
-        int blind;
+        bool alive;
+        bool poissoned;
+        bool drunk;
+        bool blind;
     } status;                      /* estado               */
     int exp;                       /* experiencia          */
     int level;                     /* nivel                */
     struct inventory_t equipment;  /* inventario           */
     int x;                         /* situacion en el mapa */
     int y;                         /* situacion en el mapa */
-} pj_t;
+    int range_sight;
+} pc_t;
 
 typedef struct {
     char number;

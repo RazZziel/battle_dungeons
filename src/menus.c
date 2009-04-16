@@ -188,12 +188,10 @@ void inventory()
         switch( key )
         {
         case KEY_LEFT:
-            if (option > 0) move_page(inventory_win, &option, -1, &temp_len, inventory_pages, pages_init);
-            else move_page(inventory_win, &option,  2, &temp_len, inventory_pages, pages_init);
+            move_page(inventory_win, &option, (option > 0) ? -1 : 2, &temp_len, inventory_pages, pages_init);
             break;
         case KEY_RIGHT:
-            if (option < 2) move_page(inventory_win, &option,  1, &temp_len, inventory_pages, pages_init);
-            else move_page(inventory_win, &option, -2, &temp_len, inventory_pages, pages_init);
+            move_page(inventory_win, &option, (option < 2) ? 1 : -2, &temp_len, inventory_pages, pages_init);
             break;
         default: break;
         }

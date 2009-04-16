@@ -81,10 +81,11 @@ map_blocks: map_block
              * - Fill the grid with the appropiate data */
 
 #if 0
-            new_grid( &game.grid[parser.map_number], LINES-7, COLS ); /* TODO s/COLS/game.game_win->_maxx/, parse after creating game_win */
+            new_grid( &game.loaded_grids[parser.map_number], LINES-7, COLS ); /* TODO s/COLS/game.game_win->_maxx/, parse after creating game_win */
 #else
-            new_grid( &game.grid[parser.map_number], parser.str_cache_lines, strlen(parser.str_cache[0]) );
+            new_grid( &game.loaded_grids[parser.map_number], parser.str_cache_lines, strlen(parser.str_cache[0]) );
 #endif
+            game.current_grid = game.loaded_grids[parser.map_number];
 #if 0
             for (int j=0; j<parser.str_cache_lines; j++)
                 printf("%s\n", parser.str_cache[j]);
@@ -104,15 +105,15 @@ map_blocks: map_block
                         yyerror("undefined tile"); /*TODO: get correct line and character*/
                     }
 
-                    int span_x = game.grid[parser.map_number]->width / line_length,
-                        span_y = game.grid[parser.map_number]->height / parser.str_cache_lines;
-                    game.grid[parser.map_number]->width = span_x * line_length;
-                    game.grid[parser.map_number]->height = span_y * parser.str_cache_lines;
+                    int span_x = game.current_grid->width / line_length,
+                        span_y = game.current_grid->height / parser.str_cache_lines;
+                    game.current_grid->width = span_x * line_length;
+                    game.current_grid->height = span_y * parser.str_cache_lines;
                     for (int sj=0; sj<span_y; sj++)
                     {
                         for (int si=0; si<span_x; si++)
                         {
-                            memcpy( grid_node(game.grid[parser.map_number], span_y*j+sj, span_x*i+si),
+                            memcpy( grid_node(game.current_grid, span_y*j+sj, span_x*i+si),
                                     node_type, sizeof(*node_type) );
                         }
                     }
@@ -141,7 +142,7 @@ map_blocks: map_block
                         yyerror("undefined tile"); /*TODO: get correct line and character*/
                     }
                     memcpy( node, node_type, sizeof(*node_type) );
-                    grid_node(game.grid[parser.map_number], j, i)->above = node;
+                    grid_node(game.current_grid, j, i)->above = node;
                 }
             }
 	}
