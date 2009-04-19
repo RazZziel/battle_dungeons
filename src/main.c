@@ -22,7 +22,7 @@
 
 #include "menus.h"
 #include "windows.h"
-#include "colors.h"
+#include "color.h"
 #include "battle.h"
 #include "errors.h"
 #include "combat.h"
@@ -95,14 +95,16 @@ void init(int argc, const char **argv)
 
     /* Graphics */
 #ifndef DEBUG_PARSER
-    initscr();             /* ncurses initialization */
-    curs_set(0);           /* Invisible cursor */
-    if (init_colors()==0)  /* Color initilization */
-        die( "Couldn't load colors\n" );
+    initscr();
+    init_colors();
+    curs_set(0);
+    noecho();
+    cbreak();
 #endif
     /* Etc */
 
     srandom((unsigned int) time(NULL));
+    memset( &game.pc, 0, sizeof(pc_t) );
     init_parser();
 }
 
@@ -146,7 +148,7 @@ void main_menu()
         mvwprintw( main_menu_win, ++y, x, "|*(     Menú Principal     )*|" );
         mvwprintw( main_menu_win, ++y, x, " \\*________________________*/" );
     
-        option = menu( main_menu_win, y+4, menu_options, MAIN_MENU_PAIR );
+        option = menu( main_menu_win, y+4, menu_options, 6 );
         drop_focus( main_menu_win );
         switch( option )
         {
@@ -171,6 +173,7 @@ int main(int argc, const char *argv[])
 {
     atexit(quit);
     init(argc, argv);
+    parse_script(SCRIPT_ENTITIES);
     parse_script(SCRIPT_MATERIALS);
     parse_script(SCRIPT_MAPS);
 #ifdef DEBUG_PARSER

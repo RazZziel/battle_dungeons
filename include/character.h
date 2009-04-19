@@ -48,7 +48,7 @@ typedef struct {
     char *name;                    /* nombre               */
     char *prefix;                  /* articulo del nombre  */
     int color;
-    char avatar;
+    char tile;
     enum gender_t gender;          /* genero               */
     enum race_t race;              /* raza                 */
     enum class_t class_;           /* clase                */

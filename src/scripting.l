@@ -31,12 +31,24 @@ tile { return TILE; }
 color { return COLOR; }
 solid { return SOLID; }
 visible { return VISIBLE; }
+name { return NAME; }
+hp { return HP; }
+mp { return MP; }
+range_sight { return RANGE_SIGHT; }
 \+= { return EQ_ADD; }
 \-= { return EQ_SUB; }
 \*= { return EQ_MUL; }
 \/= { return EQ_DIV; }
 on_touch { return ON_TOUCH; }
 on_interact { return ON_INTERACT; }
+black   { yylval.val = COLOR_BLACK;   return COLOR_CONSTANT; }
+red     { yylval.val = COLOR_RED;     return COLOR_CONSTANT; }
+green   { yylval.val = COLOR_GREEN;   return COLOR_CONSTANT; }
+yellow  { yylval.val = COLOR_YELLOW;  return COLOR_CONSTANT; }
+blue    { yylval.val = COLOR_BLUE;    return COLOR_CONSTANT; }
+magenta { yylval.val = COLOR_MAGENTA; return COLOR_CONSTANT; }
+cyan    { yylval.val = COLOR_CYAN;    return COLOR_CONSTANT; }
+white   { yylval.val = COLOR_WHITE;   return COLOR_CONSTANT; }
 
 true                     { yylval.val = 1; return B_TRUE; }
 false                    { yylval.val = 0; return B_FALSE; }

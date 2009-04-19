@@ -1,3 +1,6 @@
+#init_color 0 = (1,1,1)
+#init_color 1 = (128,128,128)
+
 material pj {
          tile = '@'
 }
@@ -12,7 +15,7 @@ material water {
 }
 material road {
          tile = '.'
-         color = brown
+         color = white
 }
 material grass {
          tile = '.'
@@ -21,12 +24,27 @@ material grass {
 
 material rock {
          tile = 'M'
-         color = gray
+         color = yellow
          solid = true
 }
 material wall {
          tile = '#'
-         color = gray
+         color = white
+         solid = true
+}
+material wall2 {
+         tile = '|'
+         color = yellow
+         solid = true
+}
+material wall3 {
+         tile = '='
+         color = white
+         solid = true
+}
+material wall2_ {
+         tile = '#'
+         color = yellow
          solid = true
 }
 material tree {
@@ -34,14 +52,28 @@ material tree {
          color = green
          solid = true
 }
+material bush {
+         tile = '*'
+         color = green
+         solid = true
+}
 material door_open {
          tile = '/'
-         color = brown
+         color = white
 }
 material door_closed {
          tile = '+'
-         color = brown
+         color = white
 }
+material door1 {
+         tile = '_'
+         color = white
+}
+material door2 {
+         tile = 'H'
+         color = white
+}
+
 
 material map_forest {
          tile = '&'
@@ -53,13 +85,13 @@ material map_plains {
 }
 material map_hills {
          tile = '~'
-         color = brown
+         color = white
 }
 material map_road {
          tile = '.'
-         color = brown
+         color = white
 }
 material map_peak {
          tile = '^'
-         color = brown
+         color = white
 }

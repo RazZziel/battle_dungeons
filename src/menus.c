@@ -60,8 +60,6 @@ int menu(WINDOW *menu_win, int menu_y, char *options[], int color_pair)
     wrefresh(menu_win);
   
     keypad(menu_win, TRUE);
-    noecho();
-    cbreak();
   
     do {
         key = wgetch(menu_win);
@@ -178,8 +176,7 @@ void inventory()
     }
 
     keypad(inventory_win, TRUE);
-    noecho();
-    cbreak();
+
     do {
         wrefresh( inventory_win );
         touchwin( page_win[option] );

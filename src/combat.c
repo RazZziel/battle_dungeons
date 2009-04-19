@@ -14,7 +14,7 @@
 #include "windows.h"
 #include "grid.h"
 #include "menus.h"
-#include "colors.h"
+#include "color.h"
 #include "character.h"
 #include "global.h"
 #include "scripting.h"
@@ -55,8 +55,6 @@ void attack(pc_t *attacker, pc_t *victim)
 
 void walk(int horizontal, int vertical, pc_t *pc)
 {
-    int collision;
-
     /* drunk characters detection */
     if (pc->status.drunk)
     {
@@ -75,7 +73,7 @@ void walk(int horizontal, int vertical, pc_t *pc)
         }
     }
   
-    collision =  
+    bool collision =
         /* collision detection with grid */
         ( (pc->x + horizontal) == game.current_grid->width )  ||
         ( (pc->x + horizontal) == -1 )                        ||
@@ -85,7 +83,7 @@ void walk(int horizontal, int vertical, pc_t *pc)
         /* collision detection with obstacles */
         ( grid_node( game.current_grid,( pc->y + vertical),
                      ( pc->x + horizontal ) )->solid == TRUE );
-  
+
     /* collision detection with enemy */
     for (int i=0; i<game.n_npcs; i++)
     {
@@ -93,13 +91,15 @@ void walk(int horizontal, int vertical, pc_t *pc)
              ( pc->y + ( vertical ) == game.npcs[i].y ) )
         {
             attack(pc, &game.npcs[i]);
+            collision = TRUE;
         }
-        else if (collision==0)
-        {
-            draw_node(pc->y, pc->x);
-            pc->x += horizontal;
-            pc->y += vertical;
-        }
+    }
+
+    if (!collision)
+    {
+        draw_node(pc->y, pc->x);
+        pc->x += horizontal;
+        pc->y += vertical;
     }
 }
 
@@ -121,7 +121,7 @@ void combat_menu()
                              LINES-COMBAT_MENU_HEIGHT, COLS-COMBAT_MENU_WIDTH-3);
     get_focus(combat_menu_win);
 
-    switch( menu(combat_menu_win, 1, menu_options, MAIN_MENU_PAIR) )
+    switch( menu(combat_menu_win, 1, menu_options, 6) )
     {
     case 1: break;
     case 2: break;
@@ -306,7 +306,7 @@ void main_loop()
                  (game.npcs[i].status.alive) )
             {
                 game.npcs[i].status.alive = 0;
-                game.npcs[i].avatar = '&';
+                game.npcs[i].tile = '&';
                 temp_round = round;
             }
     
@@ -342,19 +342,8 @@ void main_loop()
     }
 }
 
-void new_combat()
+void select_character()
 {
-    WINDOW *pc_selection_menu_win, *enemy_selection_menu_win;
-    char *menu_options[] = {
-        "Summon enemy",
-        "Random enemy",
-        "Cancel",
-        "",
-    };
-    int option, y=2;
-
-    assert( strlen(menu_options[(sizeof(menu_options) / sizeof(char *))-1]) == 0 );
-
 #if 0
     pc_selection_menu_win = newwin( 15, 40, LINES*3/4-20, COLS/2-40);
     get_focus(pc_selection_menu_win);
@@ -367,41 +356,31 @@ void new_combat()
     wgetch(pc_selection_menu_win);
     drop_focus(pc_selection_menu_win);
 #endif
-    game.n_npcs = 1;
-    game.npcs = malloc( sizeof(pc_t) * game.n_npcs );
+
+    game.pc.hp = game.pc.hp_max;
+    game.pc.mp = game.pc.mp_max;
+}
+
+void configure_test_enemies()
+{
 #if 0
+
+    int option, y=2;
+    WINDOW *pc_selection_menu_win, *enemy_selection_menu_win;
+    char *menu_options[] = {
+        "Summon enemy",
+        "Random enemy",
+        "Cancel",
+        "",
+    };
+
+    assert( strlen(menu_options[(sizeof(menu_options) / sizeof(char *))-1]) == 0 );
+
     enemy_selection_menu_win = newwin( 10, 29, LINES/2-10, COLS/2-4);
     get_focus( enemy_selection_menu_win );
-    wattron(enemy_selection_menu_win, COLOR_PAIR(30)); 
+    wattron(enemy_selection_menu_win, COLOR_PAIR(30));
     mvwprintw( enemy_selection_menu_win, 1, 3, "Select enemy:" );
-#endif
 
-    game.pc.name = "Raziel";
-    game.pc.color = 10;
-    game.pc.avatar = '@';
-    game.pc.hp = 30; game.pc.hp_max = 30;
-    game.pc.mp = 13; game.pc.mp_max = 13;
-    game.pc.level = game.pc.exp = 0;
-    game.pc.status.alive =     \
-        game.pc.status.drunk = \
-        game.pc.status.blind = 0;
-    game.pc.playable = 1;
-    game.pc.range_sight = 5;
-
-    game.npcs[0].name = "Zarovich";
-    game.npcs[0].color = 40;
-    game.npcs[0].avatar = 'Z';
-    game.npcs[0].hp = 10;
-    game.npcs[0].playable = \
-        game.npcs[0].status.alive = \
-        game.npcs[0].status.drunk = \
-        game.npcs[0].status.blind = 0;
-    game.pc.x = game.pc.y = 1;
-    game.npcs[0].x = game.npcs[0].y = 5;
-
-    main_loop();
-
-#if 0
     option = menu( enemy_selection_menu_win, y+2, menu_options, MAIN_MENU_PAIR );
     switch( option )
     {
@@ -418,4 +397,22 @@ void new_combat()
     destroy_win(pc_selection_menu_win);
     destroy_win(enemy_selection_menu_win);
 #endif
+
+    game.n_npcs = 1;
+    game.npcs = malloc( sizeof(pc_t) * game.n_npcs );
+    memset( &game.npcs[0], 0, sizeof(pc_t) );
+
+    game.npcs[0].name = "Zarovich";
+    game.npcs[0].color = 40;
+    game.npcs[0].tile = 'Z';
+    game.npcs[0].hp = 10;
+    game.npcs[0].x = game.npcs[0].y = 2;
+}
+
+void new_combat()
+{
+    select_character();
+    //configure_test_enemies();
+
+    main_loop();
 }

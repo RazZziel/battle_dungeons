@@ -2,7 +2,7 @@ entity soldierA extends(soldier,elf) {
        position = (10,10)
        inventory = (1*potion,10*gold,1*key_chest)
        behaviour.aggressive = false
-       on_interact = piss_off_soldier()
+       #action on_interact piss_off_soldier()
 }
 
 action piss_off_soldier() {
@@ -10,13 +10,18 @@ action piss_off_soldier() {
        pissed_off += 1
 }
 
-entity pj {
+entity player {
        tile = '@'
+       name = "Raziel"
+       color = red
+       hp = 30
+       mp = 13
+       range_sight = 5
 }
 
 entity skeleton {
        tile = 'z'
-       color = gray
+       color = white
 }
 entity kobold {
        tile = 'k'
@@ -34,9 +39,19 @@ entity gobblin {
 
 entity wood_weapon {
        tile = '('
-       color = brown
+       color = red
 }
 entity metal_weapon {
        tile = '('
-       color = grey
+       color = white
+}
+entity key {
+       tile = ','
+}
+
+action warp() {
+       msg("lol")
+}
+action loose_brick000() {
+       msg("lal")
 }

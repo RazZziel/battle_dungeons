@@ -17,6 +17,8 @@ typedef struct {
     pc_t pc,
         *npcs;
     int n_npcs;
+    int grid_x_offset,
+        grid_y_offset;
 } game_engine_t;
 
 

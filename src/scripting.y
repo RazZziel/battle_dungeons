@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 #include "battle.h"
 #include "grid.h"
 #include "errors.h"
@@ -12,15 +13,16 @@
 extern char* yytext;
 extern int yyget_lineno();
 extern int yylex();
-extern int yyerror(char*);
+extern int yyerror(const char *fmt, ...);
 
 extern game_engine_t game;
 extern game_parser_t parser;
 
 void *check_cache_size( void *cache, int cache_lines,
                         int *cache_size, int element_size );
-grid_node_t *find_material(char *identifier);
-grid_node_t *find_node_type(char tile);
+definition_t *find_definition(char *name, item_type_t type);
+map_rule_t *find_rule(char name, item_type_t type);
+void assign_node(grid_node_t *node, char *line, int j, int i);
 
 int mapflag=0;
 char *yyfilename=NULL;
@@ -36,17 +38,16 @@ grid_node_t default_grid_node = { ' ', 20, FALSE, TRUE };
 
 %expect 34
 
-%type <val> exp_int
-%type <val> exp_logical
+%type <val> exp_int exp_logical color_id
 
 %token <val> INTEGER
 %token <str> STRING
 %token <str> IDENTIFIER
 %token COMPOUND_IDENTIFIER
-%token MAP_TILE
+%token MAP_TILE COLOR_CONSTANT
 
 %token MAP WITH MATERIAL ENTITY ACTION
-%token TILE COLOR SOLID VISIBLE
+%token TILE COLOR SOLID VISIBLE NAME HP MP RANGE_SIGHT
 %token EXTENDS
 %token EQ_ADD EQ_SUB EQ_MUL EQ_DIV
 %token <val> B_TRUE B_FALSE B_MAYBE
@@ -56,18 +57,24 @@ grid_node_t default_grid_node = { ' ', 20, FALSE, TRUE };
 
 input: definition | input definition;
 definition:
-	  map_definition
 	{
-            parser.map_number++;
+	    memset( &parser.current_definition, 0,
+	            sizeof(parser.current_definition) );
 	}
-	| entity_definition
-	| action_definition
-	| material_definition
-	| map_rule
+	  _definition
+	| _rule
 	{
             parser.rule_cache_global_lines++;
 	}
 	;
+_definition:
+	  map_definition
+	{ parser.map_number++; }
+	| entity_definition
+	| action_definition
+	| material_definition
+	;
+_rule: map_rule;
 
 /* Maps */
 
@@ -80,43 +87,22 @@ map_blocks: map_block
              *   in cache or a permanent rule.
              * - Fill the grid with the appropiate data */
 
-#if 0
-            new_grid( &game.loaded_grids[parser.map_number], LINES-7, COLS ); /* TODO s/COLS/game.game_win->_maxx/, parse after creating game_win */
-#else
-            new_grid( &game.loaded_grids[parser.map_number], parser.str_cache_lines, strlen(parser.str_cache[0]) );
-#endif
+            new_grid( &game.loaded_grids[parser.map_number],
+                      parser.str_cache_lines, strlen(parser.str_cache[0]) );
             game.current_grid = game.loaded_grids[parser.map_number];
 #if 0
             for (int j=0; j<parser.str_cache_lines; j++)
-                printf("%s\n", parser.str_cache[j]);
+                fprintf(stderr,"%s\n", parser.str_cache[j]);
             for (int j=0; j<parser.rule_cache_lines; j++)
-                printf("%c=%s\n", parser.rule_cache[j].tile, parser.rule_cache[j].name);
+                fprintf(stderr,"%c=%c\n", parser.rule_cache[j].name,
+                        parser.rule_cache[j].data.material.tile);
 #endif
             for (int j=0; j<parser.str_cache_lines; j++)
             {
-                int line_length = strlen(parser.str_cache[j]);
-                for (int i=0; i<line_length; i++)
+                for (int i=0; i<strlen(parser.str_cache[j]); i++)
                 {
-                    if (parser.str_cache[j][i] == '\0') break;
-                    grid_node_t *node_type = find_node_type( parser.str_cache[j][i] );
-                    if ( !node_type )
-                    {
-                        yytext = parser.str_cache[j];
-                        yyerror("undefined tile"); /*TODO: get correct line and character*/
-                    }
-
-                    int span_x = game.current_grid->width / line_length,
-                        span_y = game.current_grid->height / parser.str_cache_lines;
-                    game.current_grid->width = span_x * line_length;
-                    game.current_grid->height = span_y * parser.str_cache_lines;
-                    for (int sj=0; sj<span_y; sj++)
-                    {
-                        for (int si=0; si<span_x; si++)
-                        {
-                            memcpy( grid_node(game.current_grid, span_y*j+sj, span_x*i+si),
-                                    node_type, sizeof(*node_type) );
-                        }
-                    }
+                    assign_node( grid_node(game.current_grid, j, i),
+                                 parser.str_cache[j], j, i );
                 }
             }
 	}
@@ -124,25 +110,20 @@ map_blocks: map_block
 	{
 #if 0
             for (int j=0; j<parser.str_cache_lines; j++)
-                printf("%s\n", parser.str_cache[j]);
+                fprintf(stderr,"%s\n", parser.str_cache[j]);
             for (int j=0; j<parser.rule_cache_lines; j++)
-                printf("%c=%s\n", parser.rule_cache[j].tile, parser.rule_cache[j].name);
+                fprintf(stderr,"%c=%c\n", parser.rule_cache[j].name,
+                        parser.rule_cache[j].data.material.tile);
 #endif
             for (int j=0; j<parser.str_cache_lines; j++)
             {
                 for (int i=0; i<strlen(parser.str_cache[j]); i++)
                 {
-                    grid_node_t *node = malloc( sizeof(*node) );
-                    grid_node_t *node_type = find_node_type( parser.str_cache[j][i] );
-                    if ( !node_type )
+                    if ( parser.str_cache[j][i] != ' ' )
                     {
-                        if (parser.str_cache[j][i] = ' ')
-                            continue;
-                        yytext = parser.str_cache[j];
-                        yyerror("undefined tile"); /*TODO: get correct line and character*/
+                        assign_node( NULL,
+                                     parser.str_cache[j], j, i );
                     }
-                    memcpy( node, node_type, sizeof(*node_type) );
-                    grid_node(game.current_grid, j, i)->above = node;
                 }
             }
 	}
@@ -168,53 +149,127 @@ map_line: STRING
                                                  parser.str_cache_lines,
                                                  &parser.str_cache_size,
                                                  sizeof(*parser.str_cache) );
-            parser.str_cache[parser.str_cache_lines++] = yylval.str;
+            parser.str_cache[parser.str_cache_lines++] = $<str>1;
 	}
 	;
 map_rules: map_rule | map_rule map_rules;
 map_rule:
+	MAP_TILE
 	{
+            memset( &parser.current_rule, 0, sizeof(parser.current_rule) );
+            parser.current_rule.name = $<car>1;
+	}
+	'=' map_tile_type
+	{
+            parser.current_rule.name = $<car>1;
             parser.rule_cache = check_cache_size( parser.rule_cache,
                                                   parser.rule_cache_lines,
                                                   &parser.rule_cache_size,
                                                   sizeof(*parser.rule_cache) );
+            parser.rule_cache[parser.rule_cache_lines++] = parser.current_rule;
 	}
-	MAP_TILE
-	{ parser.rule_cache[parser.rule_cache_lines].tile = yylval.car; }
-	'=' map_tile_type
 	;
-	map_tile_type:
+map_tile_type:
 	MATERIAL IDENTIFIER
 	{
-            grid_node_t *node_type = find_material(yylval.str);
-            if ( !node_type )
-            {
-                yyerror("undefined material");
-            }
+            definition_t *definition = find_definition($<str>2, RULE_MATERIAL);
+            if ( !definition )
+                yyerror("undefined material '%s'", $<str>2);
 
-            memcpy( &parser.rule_cache[parser.rule_cache_lines++].node_type,
-                    node_type, sizeof(*node_type) );
+            parser.current_rule.type = RULE_MATERIAL;
+            memcpy( &parser.current_rule.data.material,
+                    &definition->data.material,
+                    sizeof(definition->data.material) );
 	}
 	| ENTITY IDENTIFIER
+	{
+            definition_t *definition = find_definition($<str>2, RULE_ENTITY);
+            if ( !definition )
+                yyerror("undefined entity '%s'", $<str>2);
+
+            parser.current_rule.type = RULE_ENTITY;
+            memcpy( &parser.current_rule.data.entity,
+                    &definition->data.entity,
+                    sizeof(definition->data.entity) );
+	}
 	| ACTION action_trigger function_id
+	{
+            definition_t *definition = find_definition($<str>3, RULE_ACTION);
+            if ( !definition )
+            {
+                yyerror("undefined action '%s'", $<str>3);
+            }
+
+            parser.current_rule.type = RULE_ACTION;
+            memcpy( &parser.current_rule.data.action,
+                    &definition->data.action,
+                    sizeof(definition->data.action) );
+	}
 
 function_id: IDENTIFIER '(' expression_list ')'
 
 /* Entities */
 
-entity_definition: ENTITY IDENTIFIER entity_hierarchy '{' entity_content '}'
-	;
-entity_content: entity_line | entity_content entity_line
-	;
-entity_line: st_assignment
-	| action_trigger '=' function_id
+entity_definition: ENTITY IDENTIFIER entity_hierarchy
+	{
+            parser.current_definition.name = $<str>2;
+            parser.current_definition.type = RULE_ENTITY;
+	}
+	'{' entity_content '}'
+	{
+            if (!strcmp(parser.current_definition.name, "player")) /* FIXME:lol */
+            {
+                game.pc = parser.current_definition.data.entity;
+            }
+            parser.definition_cache = check_cache_size( parser.definition_cache,
+                                                        parser.definition_cache_lines,
+                                                        &parser.definition_cache_size,
+                                                        sizeof(*parser.definition_cache) );
+            parser.definition_cache[parser.definition_cache_lines++] = parser.current_definition;
+	}
 	;
 entity_hierarchy: | EXTENDS '(' superclass_list ')';
 superclass_list: IDENTIFIER | superclass_list ',' IDENTIFIER;
+entity_content: entity_line | entity_content entity_line;
+entity_line:
+	  TILE '=' MAP_TILE
+	{ parser.current_definition.data.entity.tile = $<car>3; }
+	| NAME '=' STRING
+	{ parser.current_definition.data.entity.name = $<str>3; }
+	| COLOR '=' COLOR_CONSTANT /* color_pair */
+	{ parser.current_definition.data.entity.color = $<val>3; }
+	| HP '=' INTEGER
+	{ parser.current_definition.data.entity.hp_max = $<val>3; }
+	| MP '=' INTEGER
+	{ parser.current_definition.data.entity.mp_max = $<val>3; }
+	| RANGE_SIGHT '=' INTEGER
+	{ parser.current_definition.data.entity.range_sight = $<val>3; }
+	| IDENTIFIER '=' expression
+	| COMPOUND_IDENTIFIER '=' expression
+	| ACTION action_trigger function_id
+	{
+            definition_t *definition = find_definition($<str>3, RULE_ACTION);
+            if ( !definition )
+                yyerror("undefined action '%s'", $<str>3);
+	}
+	;
 
 /* Actions */
 
-action_definition: ACTION function_id '{' action_content '}';
+action_definition: ACTION function_id
+	{
+            parser.current_definition.name = $<str>2;
+            parser.current_definition.type = RULE_ACTION;
+	}
+	'{' action_content '}'
+	{
+            parser.definition_cache = check_cache_size( parser.definition_cache,
+                                                        parser.definition_cache_lines,
+                                                        &parser.definition_cache_size,
+                                                        sizeof(*parser.definition_cache) );
+            parser.definition_cache[parser.definition_cache_lines++] = parser.current_definition;
+	}
+	;
 action_content: action_line | action_content action_line;
 action_line: statement;
 action_trigger: ON_TOUCH | ON_INTERACT;
@@ -223,29 +278,71 @@ action_trigger: ON_TOUCH | ON_INTERACT;
 
 material_definition: MATERIAL IDENTIFIER
 	{
-            parser.material_cache = check_cache_size( parser.material_cache,
-                                                      parser.material_cache_lines,
-                                                      &parser.material_cache_size,
-                                                      sizeof(*parser.material_cache) );
-            parser.material_cache[parser.material_cache_lines].name = yylval.str;
-            parser.material_cache[parser.material_cache_lines].tile = default_grid_node;
+            parser.current_definition.name = $<str>2;
+            parser.current_definition.type = RULE_MATERIAL;
+            parser.current_definition.data.material = default_grid_node;
 	}
 	'{' material_content '}'
 	{
-            parser.material_cache_lines++;
+            parser.definition_cache = check_cache_size( parser.definition_cache,
+                                                        parser.definition_cache_lines,
+                                                        &parser.definition_cache_size,
+                                                        sizeof(*parser.definition_cache) );
+            parser.definition_cache[parser.definition_cache_lines++] = parser.current_definition;
 	};
 material_content: material_line | material_content material_line;
 material_line:
 	  TILE '=' MAP_TILE
-	{ parser.material_cache[parser.material_cache_lines].tile.tile = yylval.car; }
-	| COLOR '=' color_id
-	{ parser.material_cache[parser.material_cache_lines].tile.color = 10/*TODO*/; }
+	{ parser.current_definition.data.material.tile = $<car>3; }
+	| COLOR '=' color_pair
+	{
+            parser.current_definition.data.material.color = $<val>3;
+	}
 	| SOLID '=' exp_logical
-	{ parser.material_cache[parser.material_cache_lines].tile.solid = yylval.val; }
+	{ parser.current_definition.data.material.solid = $<val>3; }
 	| VISIBLE '=' exp_logical
-	{ parser.material_cache[parser.material_cache_lines].tile.visible = yylval.val; }
+	{ parser.current_definition.data.material.visible = $<val>3; }
 	;
-color_id: IDENTIFIER;/*TODO*/
+color_pair:
+	/* Initialize pair of ncurses colors */
+	  color_id
+	{
+            static int pair_id = 38; /* FIXME:Yes I know it's shit */
+            if (pair_id < COLOR_PAIRS-1)
+                pair_id++;
+            else
+                fprintf( stderr, "Too many color pairs\n" );
+            init_pair( pair_id, $<val>1, COLOR_BLACK );   
+	}
+	| color_id ',' color_id
+	{
+            static int pair_id = 8; /* FIXME:Yes I know it's shit */
+            if (pair_id < COLOR_PAIRS-1)
+                pair_id++;
+            else
+                fprintf( stderr, "Too many color pairs\n" );
+            init_pair( pair_id, $<val>1, $<val>3 );   
+	}
+	;
+color_id:
+	/* Initialize ncurses color */
+	{ $$ = COLOR_BLACK; }
+	| '(' INTEGER ',' INTEGER ',' INTEGER ')'
+	{
+#if 0 /* ncurses sucks big time */
+            static int color_id = 0;
+            if (color_id < COLORS)
+                color_id++;
+            else
+                fprintf( stderr, "Too many colors\n" );
+            fprintf(stderr,">>(%d,%d,%d)=%d\n",$<val>2, $<val>4, $<val>6, color_id);
+            init_color( color_id, $<val>2, $<val>4, $<val>6 );
+            $$ = color_id;
+#endif
+	}
+	| COLOR_CONSTANT
+	{ $$ = $<val>1; }
+	;
 
 
 expression: IDENTIFIER
@@ -290,9 +387,17 @@ lvalue: IDENTIFIER | COMPOUND_IDENTIFIER;
 
 %%
 
-int yyerror(char *s)
+int yyerror(const char *fmt, ...)
 {
-    die( "%s:%d:[\"%s\"] %s\n", yyfilename, yyget_lineno(), yytext, s );
+    char errstr[512] = "";
+    va_list argp;
+    va_start(argp, fmt);
+
+    snprintf(errstr, 512, "%s:%d %s\n",
+             yyfilename, yyget_lineno(), fmt);
+    vdie(errstr, argp);
+
+    va_end(argp);
     return 0;
 }
 
@@ -307,25 +412,77 @@ void *check_cache_size( void *cache, int cache_lines,
     return cache;
 }
 
-grid_node_t *find_material(char *identifier)
+void assign_node(grid_node_t *node, char *line, int j, int i)
 {
-    for (int i=0; i<parser.material_cache_lines; i++)
+    if ( line[i] == ' ' )/*FIXME PIG DISGUSTING*/
     {
-        if (!strcmp(identifier,parser.material_cache[i].name))
+        (*node) = default_grid_node;
+        return;
+    }
+
+    map_rule_t *rule = find_rule( line[i], RULE_WHATEVER );
+    if ( !rule )
+        yyerror("undefined rule '%c'", line[i]);
+
+    switch( rule->type )
+    {
+    case RULE_MATERIAL:
+        if (!node)
         {
-            return &parser.material_cache[i].tile;
+            /* Node above base grid (level>0): find the end of
+               the node list for grid[j,i] allocate new memory
+               and copy. */
+            grid_node_t *iter;
+            for ( iter = grid_node(game.current_grid, j, i);
+                  iter->above != NULL;
+                  iter = iter->above );
+            iter->above = malloc( sizeof(grid_node_t) );
+            node = iter->above;
+        }
+        (*node) = (rule->data.material);
+
+    case RULE_ENTITY:
+        if ( line[i] == '@' )/*FIXME:pig disgusting*/
+        {
+            game.pc.x = i;
+            game.pc.y = j;
+            return;
+        }
+        break;
+
+    case RULE_ACTION:
+        break;
+
+    default: break;
+    }
+}
+
+/* When we are reading a map rule,
+   find the appropiate definition */
+definition_t *find_definition(char *name, item_type_t type)
+{
+    for (int i=0; i<parser.definition_cache_lines; i++)/*TODO:{b,h}search*/
+    {
+        if ( (!strcmp(name, parser.definition_cache[i].name)) &&
+             (type == parser.definition_cache[i].type) )
+        {
+            return &parser.definition_cache[i];
         }
     }
     return NULL;
 }
 
-grid_node_t *find_node_type(char tile)
+/* When we are reading a map,
+   find the appropiate map rule */
+map_rule_t *find_rule(char name, item_type_t type)
 {
-    for (int i=0; i<parser.rule_cache_lines; i++)
+    for (int i=0; i<parser.rule_cache_lines; i++)/*TODO:{b,h}search*/
     {
-        if (tile == parser.rule_cache[i].tile)
+        if ( (name == parser.rule_cache[i].name) &&
+             ( (type == parser.rule_cache[i].type) ||
+               (type == RULE_WHATEVER) ) )
         {
-            return &parser.rule_cache[i].node_type;
+            return &parser.rule_cache[i];
         }
     }
     return NULL;

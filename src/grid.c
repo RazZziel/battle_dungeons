@@ -4,14 +4,24 @@
 
 #include "grid.h"
 #include "windows.h"
-#include "colors.h"
+#include "color.h"
 #include "global.h"
 #include "battle.h"
 
-extern game_engine_t game;/* (Y) */
+extern game_engine_t game;
 
-static inline int center_x(grid_t *grid, int x) { return x + ((game.game_win->_maxx - grid->width) / 2); }
-static inline int center_y(grid_t *grid, int y) { return y + ((game.game_win->_maxy - grid->height) / 2); }
+static inline int center_x(grid_t *grid, int x)
+{
+    return x + ( (game.game_win->_maxx > grid->width)
+                 ? ((game.game_win->_maxx - grid->width) / 2)
+                 : (game.grid_x_offset));
+}
+static inline int center_y(grid_t *grid, int y)
+{
+    return y + ( (game.game_win->_maxy >= grid->height)
+                 ? ((game.game_win->_maxy - grid->height) / 2)
+                 : (game.grid_y_offset));
+}
 
 void visibility_area()
 {
@@ -62,33 +72,60 @@ inline void draw_node(int y, int x)
         }
     }
 
-    if (node != NULL)
+    if (node)
     {
         wattron( game.game_win, COLOR_PAIR(node->color) );
-        mvwprintw( game.game_win, center_y(game.current_grid,y), center_x(game.current_grid,x), "%c", node->tile );
+        mvwprintw( game.game_win,
+                   center_y(game.current_grid,y),
+                   center_x(game.current_grid,x),
+                   "%c", node->tile );
     }
     else
     {
-        mvwprintw( game.game_win, center_y(game.current_grid,y), center_x(game.current_grid,x), " " );
+        mvwprintw( game.game_win,
+                   center_y(game.current_grid,y),
+                   center_x(game.current_grid,x),
+                   " " );
     }
 }
 
 inline void draw_pc(pc_t *pc)
 {
+    int y_offset = max(game.game_win->_maxy-game.current_grid->height+1,
+                       min(0, game.game_win->_maxy/2 - game.pc.y));
+    int x_offset = max(game.game_win->_maxx-game.current_grid->width+1,
+                       min(0, game.game_win->_maxx/2 - game.pc.x));
+    if ((y_offset != game.grid_y_offset) ||
+        (x_offset != game.grid_x_offset))
+    {
+        game.grid_y_offset = y_offset;
+        game.grid_x_offset = x_offset;
+        draw_grid();
+    }
+
     if (grid_node(game.current_grid, pc->y, pc->x)->visible)
     {
         wattron( game.game_win, COLOR_PAIR(pc->color) );
         mvwprintw( game.game_win, center_y(game.current_grid, pc->y),
-                   center_x(game.current_grid,pc->x), "%c", pc->avatar );
+                   center_x(game.current_grid,pc->x), "%c", pc->tile );
         wrefresh( game.game_win );
     }
 }
 
 void draw_grid()
 {
-    for (int j=0; j<game.current_grid->height; j++)       /* Y */
+    int ji = max(0,-game.grid_y_offset);
+    int ii = max(0,-game.grid_x_offset);
+
+    for (int j=ji;
+         j<ji+min(game.current_grid->height,
+                  game.game_win->_maxy+1);
+         j++)
     {
-        for (int i=0; i<game.current_grid->width; i++)    /* X */
+        for (int i=ii;
+             i<ii+min(game.current_grid->width,
+                      game.game_win->_maxx+1);
+             i++)
         {
             draw_node(j, i);
         }
