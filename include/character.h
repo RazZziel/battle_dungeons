@@ -1,6 +1,13 @@
 #ifndef CHARACTER_H
 #define CHARACTER_H
 
+typedef enum {
+    ENTITY_WHATEVER,
+    ENTITY_PC,
+    ENTITY_NPC,
+    ENTITY_OBJECT
+} entity_type_t;
+
 enum race_t {human, dwraf, elf, gnome, half_elf, half_orc, halfling};
 enum gender_t {male, female};
 enum class_t {barbarian, bard, cleric, druid, fighter, monk, paladin, ranger, rogue, sorcerer, wizard};
@@ -40,11 +47,9 @@ struct inventory_t {
   
 };
 
-
-
 typedef struct {
-    int playable;
-	
+    entity_type_t type;
+
     char *name;                    /* nombre               */
     char *prefix;                  /* articulo del nombre  */
     int color;
@@ -84,6 +89,7 @@ typedef struct {
     int x;                         /* situacion en el mapa */
     int y;                         /* situacion en el mapa */
     int range_sight;
+    bool aggressive;
 } pc_t;
 
 typedef struct {

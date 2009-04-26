@@ -34,10 +34,10 @@ void attack(pc_t *attacker, pc_t *victim)
   
     //  text = "¡Atacas al " + enemy->name + " con tu " + "cepillodientes" + "!\n";
     //  message( "You attack %s", "random enemy" );
-    if (attacker->playable)
-        message("Atacas al %s", victim->name);
+    if (attacker->type == ENTITY_PC)
+        message("You attack the %s", victim->name);
     else
-        message("El %s te ataca", attacker->name);
+        message("The %s attacks you", attacker->name);
     // TODO ver lo de los ataques con rango
     //  if ( dices( 1,20,(base_attack_bonus + modifier( pc->str )+ size mod )
     //	      < ( 10 + armor bonus + shield bonus + modifier( enemy->dex ) + enemy->size )))
@@ -72,32 +72,42 @@ void walk(int horizontal, int vertical, pc_t *pc)
             vertical = (rand()%2)*vertical;
         }
     }
-  
+
+    int dest_x = pc->x + horizontal,
+        dest_y = pc->y + vertical;
+
     bool collision =
         /* collision detection with grid */
-        ( (pc->x + horizontal) == game.current_grid->width )  ||
-        ( (pc->x + horizontal) == -1 )                        ||
-        ( (pc->y + vertical)   == game.current_grid->height ) ||
-        ( (pc->y + vertical)   == -1 )                        ||
+        ( dest_x == game.current_grid->width )  ||
+        ( dest_x == -1 )                        ||
+        ( dest_y == game.current_grid->height ) ||
+        ( dest_y == -1 )                        ||
     
         /* collision detection with obstacles */
-        ( grid_node( game.current_grid,( pc->y + vertical),
-                     ( pc->x + horizontal ) )->solid == TRUE );
+        ( grid_node( game.current_grid, dest_y, dest_x )->solid == TRUE ) ||
+
+        /* collision detection with player */
+
+        ( (dest_x == game.pc.x) &&
+          (dest_y == game.pc.y) );
 
     /* collision detection with enemy */
     for (int i=0; i<game.n_npcs; i++)
     {
-        if ( ( pc->x + ( horizontal ) == game.npcs[i].x ) &&
-             ( pc->y + ( vertical ) == game.npcs[i].y ) )
+        if ( (dest_x == game.npcs[i].x) &&
+             (dest_y == game.npcs[i].y) )
         {
-            attack(pc, &game.npcs[i]);
+            if (game.npcs[i].aggressive)
+            {
+                attack( pc, &game.npcs[i] );
+            }
             collision = TRUE;
         }
     }
 
     if (!collision)
     {
-        draw_node(pc->y, pc->x);
+        draw_node( pc->y, pc->x );
         pc->x += horizontal;
         pc->y += vertical;
     }
@@ -232,37 +242,9 @@ void get_input()
 
 void enemy_round(pc_t *enemy)
 {
-    int vertical   = ((game.pc.y)-(enemy->y)),
-        horizontal = ((game.pc.x)-(enemy->x));
-
-    if (vertical>0)        vertical = 1;
-    else if (vertical<0)   vertical =-1;
-    else                   vertical = 0;
-
-    if (horizontal>0)      horizontal = 1;
-    else if (horizontal<0) horizontal =-1;
-    else                   horizontal = 0;
-
-    if (enemy->hp<5)
-    {
-        horizontal = -horizontal;
-        vertical = -vertical;
-    }
-
-    if ( (game.pc.y+vertical < 0) ||
-         (game.pc.y+vertical >= game.current_grid->height) ||
-         (grid_node(game.current_grid, game.pc.y+vertical, game.pc.x)->solid) )
-    {
-        vertical = 0;
-    }
-    if ( (game.pc.y+horizontal < 0) ||
-         (game.pc.y+horizontal >= game.current_grid->width) ||
-         (grid_node(game.current_grid, game.pc.y, game.pc.x+horizontal)->solid) )
-    {
-        horizontal = 0;
-    }
-
-    walk(horizontal, vertical, enemy);
+    int vertical   = (game.pc.y - enemy->y) > 0 ? 1 : -1,
+        horizontal = (game.pc.x - enemy->x) > 0 ? 1 : -1;
+    walk( horizontal, vertical, enemy );
 }
 /* I.A.
    si el enemy está acorralado, atacar en modo berserk xD
@@ -273,9 +255,6 @@ void enemy_round(pc_t *enemy)
 
 void main_loop()
 {
-    int round=1,
-        temp_round=0;
-
     erase();
 //  printw( "\nNext enemy: %s\n", enemy->name );
 //  printw( "\n\n\nROUND 1:\n" );
@@ -289,6 +268,7 @@ void main_loop()
 
     draw_grid( game.current_grid );
     draw_pc( &game.pc );
+
     for (int i=0; i<game.n_npcs; i++)
         draw_pc( &game.npcs[i] );
 
@@ -300,22 +280,17 @@ void main_loop()
 
         for (int i=0; i<game.n_npcs; i++)
         {
-            enemy_round( &game.npcs[i] );
+            if ( game.npcs[i].aggressive &&
+                 game.npcs[i].status.alive )
+            {
+                enemy_round( &game.npcs[i] );
+            }
     
             if ( (game.npcs[i].hp <= 0) &&
                  (game.npcs[i].status.alive) )
             {
-                game.npcs[i].status.alive = 0;
+                game.npcs[i].status.alive = FALSE;
                 game.npcs[i].tile = '&';
-                temp_round = round;
-            }
-    
-            if( (game.npcs[i].status.alive) &&
-                (round == (temp_round+10)) )
-            {
-                game.npcs[i].status.alive = 1;
-                game.npcs[i].status.drunk = 1;
-                game.npcs[i].hp = 1000;
             }
         }
 
@@ -329,9 +304,6 @@ void main_loop()
 
         for (int i=0; i<game.n_npcs; i++)
             draw_pc( &game.npcs[i] );
-
-
-        round++;
     }
     while ( game.pc.hp > 0 );
 
@@ -364,7 +336,6 @@ void select_character()
 void configure_test_enemies()
 {
 #if 0
-
     int option, y=2;
     WINDOW *pc_selection_menu_win, *enemy_selection_menu_win;
     char *menu_options[] = {
@@ -398,21 +369,17 @@ void configure_test_enemies()
     destroy_win(enemy_selection_menu_win);
 #endif
 
-    game.n_npcs = 1;
-    game.npcs = malloc( sizeof(pc_t) * game.n_npcs );
-    memset( &game.npcs[0], 0, sizeof(pc_t) );
-
-    game.npcs[0].name = "Zarovich";
-    game.npcs[0].color = 40;
-    game.npcs[0].tile = 'Z';
-    game.npcs[0].hp = 10;
-    game.npcs[0].x = game.npcs[0].y = 2;
+    for (int i=0; i<game.n_npcs; i++)
+    {
+        game.npcs[i].hp = game.npcs[i].hp_max;
+        game.npcs[i].status.alive = TRUE;
+    }
 }
 
 void new_combat()
 {
     select_character();
-    //configure_test_enemies();
+    configure_test_enemies();
 
     main_loop();
 }

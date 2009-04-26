@@ -26,6 +26,9 @@ material { return MATERIAL; }
 entity { return ENTITY; }
 action { return ACTION; }
 extends { return EXTENDS; }
+pc { return PC; }
+npc { return NPC; }
+object { return OBJECT; }
 with { return WITH; }
 tile { return TILE; }
 color { return COLOR; }
@@ -35,6 +38,7 @@ name { return NAME; }
 hp { return HP; }
 mp { return MP; }
 range_sight { return RANGE_SIGHT; }
+aggressive { return AGGRESSIVE; }
 \+= { return EQ_ADD; }
 \-= { return EQ_SUB; }
 \*= { return EQ_MUL; }

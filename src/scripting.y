@@ -47,7 +47,8 @@ grid_node_t default_grid_node = { ' ', 20, FALSE, TRUE };
 %token MAP_TILE COLOR_CONSTANT
 
 %token MAP WITH MATERIAL ENTITY ACTION
-%token TILE COLOR SOLID VISIBLE NAME HP MP RANGE_SIGHT
+%token TILE COLOR SOLID VISIBLE NAME HP MP RANGE_SIGHT AGGRESSIVE
+%token PC NPC OBJECT
 %token EXTENDS
 %token EQ_ADD EQ_SUB EQ_MUL EQ_DIV
 %token <val> B_TRUE B_FALSE B_MAYBE
@@ -210,23 +211,30 @@ function_id: IDENTIFIER '(' expression_list ')'
 
 /* Entities */
 
-entity_definition: ENTITY IDENTIFIER entity_hierarchy
+entity_definition: ENTITY entity_type IDENTIFIER entity_hierarchy
 	{
-            parser.current_definition.name = $<str>2;
+            parser.current_definition.name = $<str>3;
             parser.current_definition.type = RULE_ENTITY;
 	}
 	'{' entity_content '}'
 	{
-            if (!strcmp(parser.current_definition.name, "player")) /* FIXME:lol */
-            {
-                game.pc = parser.current_definition.data.entity;
-            }
             parser.definition_cache = check_cache_size( parser.definition_cache,
                                                         parser.definition_cache_lines,
                                                         &parser.definition_cache_size,
                                                         sizeof(*parser.definition_cache) );
             parser.definition_cache[parser.definition_cache_lines++] = parser.current_definition;
 	}
+	;
+entity_type: 
+	  PC
+	{ parser.current_definition.data.entity.type = ENTITY_PC; }
+	| NPC
+	{ parser.current_definition.data.entity.type = ENTITY_NPC; }
+	| OBJECT
+	{ parser.current_definition.data.entity.type = ENTITY_OBJECT; }
+	|
+	{ yyerror( "Expected type of entity (pc|npc|object)"
+                   " before entity identifier." ); }
 	;
 entity_hierarchy: | EXTENDS '(' superclass_list ')';
 superclass_list: IDENTIFIER | superclass_list ',' IDENTIFIER;
@@ -238,14 +246,15 @@ entity_line:
 	{ parser.current_definition.data.entity.name = $<str>3; }
 	| COLOR '=' COLOR_CONSTANT /* color_pair */
 	{ parser.current_definition.data.entity.color = $<val>3; }
-	| HP '=' INTEGER
+	| HP '=' exp_int
 	{ parser.current_definition.data.entity.hp_max = $<val>3; }
-	| MP '=' INTEGER
+	| MP '=' exp_int
 	{ parser.current_definition.data.entity.mp_max = $<val>3; }
-	| RANGE_SIGHT '=' INTEGER
+	| RANGE_SIGHT '=' exp_int
 	{ parser.current_definition.data.entity.range_sight = $<val>3; }
+	| AGGRESSIVE '=' exp_logical
+	{ parser.current_definition.data.entity.aggressive = $<val>3; }
 	| IDENTIFIER '=' expression
-	| COMPOUND_IDENTIFIER '=' expression
 	| ACTION action_trigger function_id
 	{
             definition_t *definition = find_definition($<str>3, RULE_ACTION);
@@ -307,7 +316,7 @@ color_pair:
 	/* Initialize pair of ncurses colors */
 	  color_id
 	{
-            static int pair_id = 38; /* FIXME:Yes I know it's shit */
+            static int pair_id = 36; /* FIXME:Yes I know it's shit */
             if (pair_id < COLOR_PAIRS-1)
                 pair_id++;
             else
@@ -440,13 +449,23 @@ void assign_node(grid_node_t *node, char *line, int j, int i)
             node = iter->above;
         }
         (*node) = (rule->data.material);
+        break;
 
     case RULE_ENTITY:
-        if ( line[i] == '@' )/*FIXME:pig disgusting*/
+        switch( rule->data.entity.type )
         {
-            game.pc.x = i;
-            game.pc.y = j;
-            return;
+        case ENTITY_PC:
+            rule->data.entity.x = i;
+            rule->data.entity.y = j;
+            game.pc = rule->data.entity;            
+            break;
+        case ENTITY_NPC:
+            rule->data.entity.x = i;
+            rule->data.entity.y = j;
+            game.npcs = realloc( game.npcs, sizeof(*game.npcs) * (game.n_npcs+1) );
+            game.npcs[game.n_npcs++] = rule->data.entity;
+            break;
+        default: break;
         }
         break;
 

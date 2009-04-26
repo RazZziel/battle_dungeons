@@ -18,12 +18,6 @@ typedef struct {
     int width;
 } grid_t;
 
-#define PC              '@'
-#define TER_GRASS       '.'
-#define OBS_WALL        '#'
-#define TER_GRASS_COLOR 20
-#define OBS_WALL_COLOR  30
-
 void visibility_area();
 void create_first_combat_grid(grid_t *grid, pc_t *pc, pc_t *enemy);
 void new_grid(grid_t **grid, int height, int width);
