@@ -130,12 +130,13 @@ map dweller {
 	""
 	"                         k"
 	""
-	"                    k      @"
+	"                    k       @ ,"
 	"                                     k"
 	"                            k"
 } with {
 	'S' = entity soldier
 	'k' = entity kobold
+	',' = entity key
 }
 
 

@@ -42,7 +42,7 @@ void attack(pc_t *attacker, pc_t *victim)
     //  if ( dices( 1,20,(base_attack_bonus + modifier( pc->str )+ size mod )
     //	      < ( 10 + armor bonus + shield bonus + modifier( enemy->dex ) + enemy->size )))
     //    message("Fallas el golpe*\n");
-    //  else 
+    //  else
     //    hit = dices( pc->arma->dado, 6, ( base atack bonus + modifier( enemy->str ) + enemy->tamanyo ));
   
     //  if (pifia)

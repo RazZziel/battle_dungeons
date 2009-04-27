@@ -47,6 +47,8 @@ struct inventory_t {
   
 };
 
+typedef void action_t;
+
 typedef struct {
     entity_type_t type;
 
@@ -90,6 +92,10 @@ typedef struct {
     int y;                         /* situacion en el mapa */
     int range_sight;
     bool aggressive;
+    struct {
+        action_t *on_interact;
+        action_t *on_touch;
+    } actions;
 } pc_t;
 
 typedef struct {

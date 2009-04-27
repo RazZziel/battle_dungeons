@@ -38,7 +38,7 @@ grid_node_t default_grid_node = { ' ', 20, FALSE, TRUE };
 
 %expect 34
 
-%type <val> exp_int exp_logical color_id
+%type <val> exp_int exp_logical color_id entity_type
 
 %token <val> INTEGER
 %token <str> STRING
@@ -213,6 +213,7 @@ function_id: IDENTIFIER '(' expression_list ')'
 
 entity_definition: ENTITY entity_type IDENTIFIER entity_hierarchy
 	{
+            parser.current_definition.data.entity.type = $<val>2;
             parser.current_definition.name = $<str>3;
             parser.current_definition.type = RULE_ENTITY;
 	}
@@ -227,11 +228,11 @@ entity_definition: ENTITY entity_type IDENTIFIER entity_hierarchy
 	;
 entity_type: 
 	  PC
-	{ parser.current_definition.data.entity.type = ENTITY_PC; }
+	{ $$ = ENTITY_PC; }
 	| NPC
-	{ parser.current_definition.data.entity.type = ENTITY_NPC; }
+	{ $$ = ENTITY_NPC; }
 	| OBJECT
-	{ parser.current_definition.data.entity.type = ENTITY_OBJECT; }
+	{ $$ = ENTITY_OBJECT; }
 	|
 	{ yyerror( "Expected type of entity (pc|npc|object)"
                    " before entity identifier." ); }

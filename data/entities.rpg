@@ -31,7 +31,7 @@ entity npc kobold {
        tile = 'k'
        name = "Kobold"
        color = blue
-       hp = 3
+       hp = 10
        mp = 0
        aggressive = true
 }
@@ -45,16 +45,17 @@ entity npc gobblin {
 }
 
 
-entity npc wood_weapon {
+entity object wood_weapon {
        tile = '('
        color = red
 }
-entity npc metal_weapon {
+entity object metal_weapon {
        tile = '('
        color = white
 }
-entity npc key {
+entity object key {
        tile = ','
+       color = white
 }
 
 action warp() {
