@@ -21,7 +21,7 @@
 
 extern game_engine_t game;
 
-void attack(pc_t *attacker, pc_t *victim)
+void attack(entity_t *attacker, entity_t *victim)
 {
 /* Ataca al enemigo.                                             *
  * Mediante una tirada de random sobre 20, determina si el golpe *
@@ -50,13 +50,13 @@ void attack(pc_t *attacker, pc_t *victim)
     //  else if (critico)
     //    message( "¡¡Le asestas un golpe mortal a%s%s!!\n", enemy->prefix, enemy->name );
     hit = 0;//6;
-    victim->hp -= hit;
+    victim->data.character->hp -= hit;
 }
 
-void walk(int horizontal, int vertical, pc_t *pc)
+void walk(int horizontal, int vertical, entity_t *pc)
 {
     /* drunk characters detection */
-    if (pc->status.drunk)
+    if (pc->data.character->status.drunk)
     {
         if (horizontal == 0)
         {
@@ -88,18 +88,18 @@ void walk(int horizontal, int vertical, pc_t *pc)
 
         /* collision detection with player */
 
-        ( (dest_x == game.pc.x) &&
-          (dest_y == game.pc.y) );
+        ( (dest_x == game.pc->x) &&
+          (dest_y == game.pc->y) );
 
     /* collision detection with enemy */
     for (int i=0; i<game.n_npcs; i++)
     {
-        if ( (dest_x == game.npcs[i].x) &&
-             (dest_y == game.npcs[i].y) )
+        if ( (dest_x == game.npcs[i]->x) &&
+             (dest_y == game.npcs[i]->y) )
         {
-            if (game.npcs[i].aggressive)
+            if (game.npcs[i]->data.character->aggressive)
             {
-                attack( pc, &game.npcs[i] );
+                attack( pc, game.npcs[i] );
             }
             collision = TRUE;
         }
@@ -181,14 +181,14 @@ void help_menu()
 
 void refresh_screen()
 {
-    int indent = max(strlen(game.pc.name)+3, 15) + 4;
+    int indent = max(strlen(game.pc->name)+3, 15) + 4;
 
     werase(game.message_win);
     werase(game.stats_win);
-    mvwprintw(game.stats_win, 1, 1,      "%s",             game.pc.name);
-    mvwprintw(game.stats_win, 2, 1,      "lvl/exp: %i/%i", game.pc.level, game.pc.exp );
-    mvwprintw(game.stats_win, 1, indent, "hp: %i(%i)",     game.pc.hp,    game.pc.hp_max);
-    mvwprintw(game.stats_win, 2, indent, "mp: %i(%i)",     game.pc.mp,    game.pc.mp_max);
+    mvwprintw(game.stats_win, 1, 1,      "%s",             game.pc->name);
+    mvwprintw(game.stats_win, 2, 1,      "lvl/exp: %i/%i", game.pc->data.character->level, game.pc->data.character->exp );
+    mvwprintw(game.stats_win, 1, indent, "hp: %i(%i)",     game.pc->data.character->hp,    game.pc->data.character->hp_max);
+    mvwprintw(game.stats_win, 2, indent, "mp: %i(%i)",     game.pc->data.character->mp,    game.pc->data.character->mp_max);
     wrefresh(game.stats_win);
 }
 
@@ -201,18 +201,18 @@ void get_input()
 
         switch( wgetch(game.game_win) )
         {
-        case KEY_LEFT:  walk(-1, 0, &game.pc ); break;
-        case '4':       walk(-1, 0, &game.pc ); break;
-        case KEY_RIGHT: walk( 1, 0, &game.pc ); break;
-        case '6':       walk( 1, 0, &game.pc ); break;
-        case KEY_UP:    walk( 0,-1, &game.pc ); break;
-        case '8':       walk( 0,-1, &game.pc ); break;
-        case KEY_DOWN:  walk( 0, 1, &game.pc ); break;
-        case '2':       walk( 0, 1, &game.pc ); break;
-        case '7':       walk(-1,-1, &game.pc ); break;
-        case '9':       walk( 1,-1, &game.pc ); break;
-        case '1':       walk(-1, 1, &game.pc ); break;
-        case '3':       walk( 1, 1, &game.pc ); break;
+        case KEY_LEFT:  walk(-1, 0, game.pc ); break;
+        case '4':       walk(-1, 0, game.pc ); break;
+        case KEY_RIGHT: walk( 1, 0, game.pc ); break;
+        case '6':       walk( 1, 0, game.pc ); break;
+        case KEY_UP:    walk( 0,-1, game.pc ); break;
+        case '8':       walk( 0,-1, game.pc ); break;
+        case KEY_DOWN:  walk( 0, 1, game.pc ); break;
+        case '2':       walk( 0, 1, game.pc ); break;
+        case '7':       walk(-1,-1, game.pc ); break;
+        case '9':       walk( 1,-1, game.pc ); break;
+        case '1':       walk(-1, 1, game.pc ); break;
+        case '3':       walk( 1, 1, game.pc ); break;
 	
             //case 'a': attack( &game.pc, &game.enemy );   break;
             //case 'm': magic();                        break;
@@ -229,7 +229,7 @@ void get_input()
             touchwin( game.game_win );
             break;
         case 'd':
-            game.pc.status.drunk =! game.pc.status.drunk;
+            game.pc->data.character->status.drunk =! game.pc->data.character->status.drunk;
             break;
 
         default:
@@ -240,10 +240,10 @@ void get_input()
     } while (!key_ok);
 }
 
-void enemy_round(pc_t *enemy)
+void enemy_round(entity_t *enemy)
 {
-    int vertical   = (game.pc.y - enemy->y) > 0 ? 1 : -1,
-        horizontal = (game.pc.x - enemy->x) > 0 ? 1 : -1;
+    int vertical   = (game.pc->y - enemy->y) > 0 ? 1 : -1,
+        horizontal = (game.pc->x - enemy->x) > 0 ? 1 : -1;
     walk( horizontal, vertical, enemy );
 }
 /* I.A.
@@ -267,47 +267,45 @@ void main_loop()
     keypad( game.game_win, TRUE );  
 
     draw_grid( game.current_grid );
-    draw_pc( &game.pc );
-
-    for (int i=0; i<game.n_npcs; i++)
-        draw_pc( &game.npcs[i] );
 
     do
     {
+        /* Drawing */
+
+        if ( !game.pc->data.character->status.blind )
+            visibility_area();
+
+        for (int i=0; i<game.n_entities; i++)
+        {
+            draw_entity( game.entities[i] );
+        }
+        draw_entity( game.pc );
+
         refresh_screen();
+
+        /* Input */
     
         get_input();
 
         for (int i=0; i<game.n_npcs; i++)
         {
-            if ( game.npcs[i].aggressive &&
-                 game.npcs[i].status.alive )
+            if ( game.npcs[i]->data.character->aggressive &&
+                 game.npcs[i]->data.character->status.alive )
             {
-                enemy_round( &game.npcs[i] );
+                enemy_round( game.npcs[i] );
             }
     
-            if ( (game.npcs[i].hp <= 0) &&
-                 (game.npcs[i].status.alive) )
+            if ( (game.npcs[i]->data.character->hp <= 0) &&
+                 (game.npcs[i]->data.character->status.alive) )
             {
-                game.npcs[i].status.alive = FALSE;
-                game.npcs[i].tile = '&';
+                game.npcs[i]->data.character->status.alive = FALSE;
+                game.npcs[i]->tile = '&';
             }
         }
-
-
-        /* Drawing */
-
-        if ( !game.pc.status.blind )
-            visibility_area();
-
-        draw_pc( &game.pc );
-
-        for (int i=0; i<game.n_npcs; i++)
-            draw_pc( &game.npcs[i] );
     }
-    while ( game.pc.hp > 0 );
+    while ( game.pc->data.character->hp > 0 );
 
-    if (game.pc.hp <= 0)
+    if (game.pc->data.character->hp <= 0)
     {
         printw( "You are dead." );
         printw( "GAME OVER" );
@@ -329,8 +327,8 @@ void select_character()
     drop_focus(pc_selection_menu_win);
 #endif
 
-    game.pc.hp = game.pc.hp_max;
-    game.pc.mp = game.pc.mp_max;
+    game.pc->data.character->hp = game.pc->data.character->hp_max;
+    game.pc->data.character->mp = game.pc->data.character->mp_max;
 }
 
 void configure_test_enemies()
@@ -371,8 +369,8 @@ void configure_test_enemies()
 
     for (int i=0; i<game.n_npcs; i++)
     {
-        game.npcs[i].hp = game.npcs[i].hp_max;
-        game.npcs[i].status.alive = TRUE;
+        game.npcs[i]->data.character->hp = game.npcs[i]->data.character->hp_max;
+        game.npcs[i]->data.character->status.alive = TRUE;
     }
 }
 

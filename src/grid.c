@@ -25,15 +25,15 @@ static inline int center_y(grid_t *grid, int y)
 
 void visibility_area()
 {
-    for (int j=max(0, (game.pc.y)-game.pc.range_sight);
-         j<min(game.current_grid->height, (game.pc.y)+game.pc.range_sight);
+    for (int j=max(0, (game.pc->y)-game.pc->data.character->range_sight);
+         j<min(game.current_grid->height, (game.pc->y)+game.pc->data.character->range_sight);
          j++)
     {
-        for (int i=max(0, (game.pc.x)-game.pc.range_sight);
-             i<min(game.current_grid->width, (game.pc.x)+game.pc.range_sight);
+        for (int i=max(0, (game.pc->x)-game.pc->data.character->range_sight);
+             i<min(game.current_grid->width, (game.pc->x)+game.pc->data.character->range_sight);
              i++)
         {
-            if ( ((pow(i-(game.pc.x), 2) + pow(j-(game.pc.y), 2)) <= pow(game.pc.range_sight, 2)) &&
+            if ( ((pow(i-(game.pc->x), 2) + pow(j-(game.pc->y), 2)) <= pow(game.pc->data.character->range_sight, 2)) &&
                  (!grid_node(game.current_grid, j, i)->visible) )
             {
                 grid_node(game.current_grid, j, i)->visible = TRUE;
@@ -89,12 +89,12 @@ inline void draw_node(int y, int x)
     }
 }
 
-inline void draw_pc(pc_t *pc)
+inline void draw_entity(entity_t *pc)
 {
     int y_offset = max(game.game_win->_maxy-game.current_grid->height+1,
-                       min(0, game.game_win->_maxy/2 - game.pc.y));
+                       min(0, game.game_win->_maxy/2 - game.pc->y));
     int x_offset = max(game.game_win->_maxx-game.current_grid->width+1,
-                       min(0, game.game_win->_maxx/2 - game.pc.x));
+                       min(0, game.game_win->_maxx/2 - game.pc->x));
     if ((y_offset != game.grid_y_offset) ||
         (x_offset != game.grid_x_offset))
     {

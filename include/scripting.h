@@ -19,7 +19,7 @@ typedef struct {
     char name;
     union {
         grid_node_t material;
-        pc_t entity;
+        entity_t entity;
         char *action;
     } data;
 } map_rule_t; /* TODO:Merge with definition_t */
@@ -29,8 +29,8 @@ typedef struct {
     char *name;
     union {
         grid_node_t material;
-        pc_t entity;
-        char *action;
+        entity_t entity;
+        char action;
     } data;
 } definition_t;
 

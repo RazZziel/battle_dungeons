@@ -19,9 +19,9 @@ typedef struct {
 } grid_t;
 
 void visibility_area();
-void create_first_combat_grid(grid_t *grid, pc_t *pc, pc_t *enemy);
+void create_first_combat_grid(grid_t *grid, entity_t *pc, entity_t *enemy);
 void new_grid(grid_t **grid, int height, int width);
-void draw_pc(pc_t *pc);
+void draw_entity(entity_t *pc);
 void draw_grid();
 grid_node_t *grid_node(grid_t *grid, int y, int x);
 void draw_node(int y, int x);

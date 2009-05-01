@@ -14,9 +14,11 @@ typedef struct {
     WINDOW *message_win,
         *game_win,
         *stats_win;
-    pc_t pc,
-        *npcs;
-    int n_npcs;
+    entity_t *pc,
+        **npcs,
+        **entities;
+    int n_npcs,
+        n_entities;
     int grid_x_offset,
         grid_y_offset;
 } game_engine_t;

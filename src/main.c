@@ -104,7 +104,6 @@ void init(int argc, const char **argv)
     /* Etc */
 
     srandom((unsigned int) time(NULL));
-    memset( &game.pc, 0, sizeof(pc_t) );
     init_parser();
 }
 

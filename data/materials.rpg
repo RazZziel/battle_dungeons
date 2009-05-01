@@ -1,6 +1,12 @@
 #init_color 0 = (1,1,1)
 #init_color 1 = (128,128,128)
 
+material default {
+         solid = false
+         visible = false
+}
+' ' = material default
+
 material pj {
          tile = '@'
 }

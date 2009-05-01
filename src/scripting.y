@@ -82,22 +82,17 @@ _rule: map_rule;
 map_definition: MAP IDENTIFIER map_blocks;
 
 map_blocks: map_block
+        /* Build map.
+         * - Check if all tiles correspond to either a rule
+         *   in cache or a permanent rule.
+         * - Fill the grid with the appropiate data */
 	{
-            /* Build map.
-             * - Check if all tiles correspond to either a rule
-             *   in cache or a permanent rule.
-             * - Fill the grid with the appropiate data */
+            /* Process 1st map layer */
 
             new_grid( &game.loaded_grids[parser.map_number],
                       parser.str_cache_lines, strlen(parser.str_cache[0]) );
             game.current_grid = game.loaded_grids[parser.map_number];
-#if 0
-            for (int j=0; j<parser.str_cache_lines; j++)
-                fprintf(stderr,"%s\n", parser.str_cache[j]);
-            for (int j=0; j<parser.rule_cache_lines; j++)
-                fprintf(stderr,"%c=%c\n", parser.rule_cache[j].name,
-                        parser.rule_cache[j].data.material.tile);
-#endif
+
             for (int j=0; j<parser.str_cache_lines; j++)
             {
                 for (int i=0; i<strlen(parser.str_cache[j]); i++)
@@ -109,13 +104,8 @@ map_blocks: map_block
 	}
 	| map_blocks ',' map_block
 	{
-#if 0
-            for (int j=0; j<parser.str_cache_lines; j++)
-                fprintf(stderr,"%s\n", parser.str_cache[j]);
-            for (int j=0; j<parser.rule_cache_lines; j++)
-                fprintf(stderr,"%c=%c\n", parser.rule_cache[j].name,
-                        parser.rule_cache[j].data.material.tile);
-#endif
+            /* Process map layer above 1st one */
+
             for (int j=0; j<parser.str_cache_lines; j++)
             {
                 for (int i=0; i<strlen(parser.str_cache[j]); i++)
@@ -213,9 +203,24 @@ function_id: IDENTIFIER '(' expression_list ')'
 
 entity_definition: ENTITY entity_type IDENTIFIER entity_hierarchy
 	{
-            parser.current_definition.data.entity.type = $<val>2;
             parser.current_definition.name = $<str>3;
             parser.current_definition.type = RULE_ENTITY;
+
+            parser.current_definition.data.entity.type = $<val>2;
+            switch( $<val>2 )
+            {
+            case ENTITY_PC:
+            case ENTITY_NPC:
+                parser.current_definition.data.entity.data.character = malloc(sizeof(character_t));
+                memset(parser.current_definition.data.entity.data.character, 0, sizeof(character_t));
+                break;
+            case ENTITY_OBJECT:
+                parser.current_definition.data.entity.data.object = malloc(sizeof(object_t));
+                memset(parser.current_definition.data.entity.data.object, 0, sizeof(object_t));
+                break;
+            default:
+                yyerror( "Unknown entity type %d", $<val>2 );
+            }
 	}
 	'{' entity_content '}'
 	{
@@ -248,13 +253,13 @@ entity_line:
 	| COLOR '=' COLOR_CONSTANT /* color_pair */
 	{ parser.current_definition.data.entity.color = $<val>3; }
 	| HP '=' exp_int
-	{ parser.current_definition.data.entity.hp_max = $<val>3; }
+	{ parser.current_definition.data.entity.data.character->hp_max = $<val>3; }
 	| MP '=' exp_int
-	{ parser.current_definition.data.entity.mp_max = $<val>3; }
+	{ parser.current_definition.data.entity.data.character->mp_max = $<val>3; }
 	| RANGE_SIGHT '=' exp_int
-	{ parser.current_definition.data.entity.range_sight = $<val>3; }
+	{ parser.current_definition.data.entity.data.character->range_sight = $<val>3; }
 	| AGGRESSIVE '=' exp_logical
-	{ parser.current_definition.data.entity.aggressive = $<val>3; }
+	{ parser.current_definition.data.entity.data.character->aggressive = $<val>3; }
 	| IDENTIFIER '=' expression
 	| ACTION action_trigger function_id
 	{
@@ -305,9 +310,7 @@ material_line:
 	  TILE '=' MAP_TILE
 	{ parser.current_definition.data.material.tile = $<car>3; }
 	| COLOR '=' color_pair
-	{
-            parser.current_definition.data.material.color = $<val>3;
-	}
+	{ parser.current_definition.data.material.color = $<val>3; }
 	| SOLID '=' exp_logical
 	{ parser.current_definition.data.material.solid = $<val>3; }
 	| VISIBLE '=' exp_logical
@@ -424,12 +427,6 @@ void *check_cache_size( void *cache, int cache_lines,
 
 void assign_node(grid_node_t *node, char *line, int j, int i)
 {
-    if ( line[i] == ' ' )/*FIXME PIG DISGUSTING*/
-    {
-        (*node) = default_grid_node;
-        return;
-    }
-
     map_rule_t *rule = find_rule( line[i], RULE_WHATEVER );
     if ( !rule )
         yyerror("undefined rule '%c'", line[i]);
@@ -453,27 +450,36 @@ void assign_node(grid_node_t *node, char *line, int j, int i)
         break;
 
     case RULE_ENTITY:
+        rule->data.entity.x = i;
+        rule->data.entity.y = j;
+
+        game.entities = realloc( game.entities, sizeof(*game.entities) * (game.n_entities+1) );
+        game.entities[game.n_entities] = malloc(sizeof(**game.entities));
+        memcpy(game.entities[game.n_entities], &rule->data.entity, sizeof(**game.entities));
+
         switch( rule->data.entity.type )
         {
         case ENTITY_PC:
-            rule->data.entity.x = i;
-            rule->data.entity.y = j;
-            game.pc = rule->data.entity;            
+            game.pc = game.entities[game.n_entities];
             break;
         case ENTITY_NPC:
-            rule->data.entity.x = i;
-            rule->data.entity.y = j;
             game.npcs = realloc( game.npcs, sizeof(*game.npcs) * (game.n_npcs+1) );
-            game.npcs[game.n_npcs++] = rule->data.entity;
+            game.npcs[game.n_npcs++] = game.entities[game.n_entities];
             break;
-        default: break;
+        case ENTITY_OBJECT:
+            break;
+        default:
+            yyerror( "Unknown entity type %d", rule->data.entity.type );
         }
+
+        game.n_entities++;
         break;
 
     case RULE_ACTION:
         break;
 
-    default: break;
+    default:
+        yyerror( "Unknown rule type %d", rule->type );
     }
 }
 
