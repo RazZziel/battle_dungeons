@@ -9,6 +9,8 @@
 #include "scripting.h"
 
 #define YYERROR_VERBOSE
+#define ASSIGN_CHAR_PROPERTY(_field_,_value_) \
+    parser.current_definition.data.entity.data.character->_field_ = _value_
 
 extern char* yytext;
 extern int yyget_lineno();
@@ -37,7 +39,6 @@ grid_node_t default_grid_node = { ' ', 20, FALSE, TRUE };
 }
 
 %expect 34
-
 %type <val> exp_int exp_logical color_id entity_type
 
 %token <val> INTEGER
@@ -49,6 +50,7 @@ grid_node_t default_grid_node = { ' ', 20, FALSE, TRUE };
 %token MAP WITH MATERIAL ENTITY ACTION
 %token TILE COLOR SOLID VISIBLE NAME HP MP RANGE_SIGHT AGGRESSIVE
 %token PC NPC OBJECT
+%token STR DEX CON INTL WIZ CHA
 %token EXTENDS
 %token EQ_ADD EQ_SUB EQ_MUL EQ_DIV
 %token <val> B_TRUE B_FALSE B_MAYBE
@@ -252,14 +254,14 @@ entity_line:
 	{ parser.current_definition.data.entity.name = $<str>3; }
 	| COLOR '=' COLOR_CONSTANT /* color_pair */
 	{ parser.current_definition.data.entity.color = $<val>3; }
-	| HP '=' exp_int
-	{ parser.current_definition.data.entity.data.character->hp_max = $<val>3; }
-	| MP '=' exp_int
-	{ parser.current_definition.data.entity.data.character->mp_max = $<val>3; }
-	| RANGE_SIGHT '=' exp_int
-	{ parser.current_definition.data.entity.data.character->range_sight = $<val>3; }
-	| AGGRESSIVE '=' exp_logical
-	{ parser.current_definition.data.entity.data.character->aggressive = $<val>3; }
+
+	| HP '=' exp_int  { ASSIGN_CHAR_PROPERTY(hp_max, $<val>3); }
+	| MP '=' exp_int  { ASSIGN_CHAR_PROPERTY(mp_max, $<val>3); }
+	| STR '=' exp_int { ASSIGN_CHAR_PROPERTY(str, $<val>3); }
+	| CON '=' exp_int { ASSIGN_CHAR_PROPERTY(con, $<val>3); }
+
+	| RANGE_SIGHT '=' exp_int    { ASSIGN_CHAR_PROPERTY(range_sight, $<val>3); }
+	| AGGRESSIVE '=' exp_logical { ASSIGN_CHAR_PROPERTY(aggressive, $<val>3); }
 	| IDENTIFIER '=' expression
 	| ACTION action_trigger function_id
 	{
@@ -453,9 +455,11 @@ void assign_node(grid_node_t *node, char *line, int j, int i)
         rule->data.entity.x = i;
         rule->data.entity.y = j;
 
-        game.entities = realloc( game.entities, sizeof(*game.entities) * (game.n_entities+1) );
-        game.entities[game.n_entities] = malloc(sizeof(**game.entities));
-        memcpy(game.entities[game.n_entities], &rule->data.entity, sizeof(**game.entities));
+        game.entities = realloc( game.entities, sizeof(entity_t*) * (game.n_entities+1) );
+        game.entities[game.n_entities] = malloc( sizeof(entity_t) );
+        memcpy( game.entities[game.n_entities],
+                &rule->data.entity,
+                sizeof(entity_t) );
 
         switch( rule->data.entity.type )
         {
@@ -464,7 +468,12 @@ void assign_node(grid_node_t *node, char *line, int j, int i)
             break;
         case ENTITY_NPC:
             game.npcs = realloc( game.npcs, sizeof(*game.npcs) * (game.n_npcs+1) );
-            game.npcs[game.n_npcs++] = game.entities[game.n_entities];
+            game.npcs[game.n_npcs] = game.entities[game.n_entities];
+            game.npcs[game.n_npcs]->data.character = malloc( sizeof(character_t) );
+            memcpy( game.npcs[game.n_npcs]->data.character,
+                    rule->data.entity.data.character,
+                    sizeof(character_t) );
+            game.n_npcs++;
             break;
         case ENTITY_OBJECT:
             break;

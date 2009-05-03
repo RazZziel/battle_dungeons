@@ -20,6 +20,7 @@ entity pc player {
        color = red
        hp = 30
        mp = 13
+       str = 10
        range_sight = 5
 }
 
@@ -31,8 +32,9 @@ entity npc kobold {
        tile = 'k'
        name = "Kobold"
        color = blue
-       hp = 10
+       hp = 20
        mp = 0
+       str = 2
        aggressive = true
 }
 entity npc orc {

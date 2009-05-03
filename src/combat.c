@@ -49,7 +49,7 @@ void attack(entity_t *attacker, entity_t *victim)
     //    message( "%s%s se ríe de ti...\n", enemy->prefix, enemy->name );
     //  else if (critico)
     //    message( "¡¡Le asestas un golpe mortal a%s%s!!\n", enemy->prefix, enemy->name );
-    hit = 0;//6;
+    hit = attacker->data.character->str;
     victim->data.character->hp -= hit;
 }
 
@@ -95,7 +95,8 @@ void walk(int horizontal, int vertical, entity_t *pc)
     for (int i=0; i<game.n_npcs; i++)
     {
         if ( (dest_x == game.npcs[i]->x) &&
-             (dest_y == game.npcs[i]->y) )
+             (dest_y == game.npcs[i]->y) &&
+             (game.npcs[i]->data.character->status.alive) )
         {
             if (game.npcs[i]->data.character->aggressive)
             {
@@ -289,17 +290,17 @@ void main_loop()
 
         for (int i=0; i<game.n_npcs; i++)
         {
-            if ( game.npcs[i]->data.character->aggressive &&
-                 game.npcs[i]->data.character->status.alive )
+            if (game.npcs[i]->data.character->status.alive)
             {
-                enemy_round( game.npcs[i] );
-            }
-    
-            if ( (game.npcs[i]->data.character->hp <= 0) &&
-                 (game.npcs[i]->data.character->status.alive) )
-            {
-                game.npcs[i]->data.character->status.alive = FALSE;
-                game.npcs[i]->tile = '&';
+                if ( game.npcs[i]->data.character->aggressive )
+                {
+                    enemy_round( game.npcs[i] );
+                }
+                if ( game.npcs[i]->data.character->hp <= 0 )
+                {
+                    game.npcs[i]->data.character->status.alive = FALSE;
+                    game.npcs[i]->tile = '&';
+                }
             }
         }
     }

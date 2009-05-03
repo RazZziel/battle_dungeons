@@ -37,6 +37,12 @@ visible { return VISIBLE; }
 name { return NAME; }
 hp { return HP; }
 mp { return MP; }
+str { return STR; }
+dex { return DEX; }
+con { return CON; }
+intl { return INTL; }
+wiz { return WIZ; }
+cha { return CHA; }
 range_sight { return RANGE_SIGHT; }
 aggressive { return AGGRESSIVE; }
 \+= { return EQ_ADD; }
