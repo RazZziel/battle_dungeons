@@ -80,6 +80,7 @@ typedef struct {
     bool aggressive;
 
     object_t *objects;
+    int n_objects;
     int money;
 
     struct {
