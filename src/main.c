@@ -142,7 +142,7 @@ void main_menu()
         get_focus( main_menu_win );
         x = (MENU_WIDTH-30)/2;
         y = 5;
-        wattron( main_menu_win, COLOR_PAIR(30) );
+        wattron( main_menu_win, COLOR_PAIR(3) );
         mvwprintw( main_menu_win,   y, x, " /*)                      (*\\" );
         mvwprintw( main_menu_win, ++y, x, "|*(     Menú Principal     )*|" );
         mvwprintw( main_menu_win, ++y, x, " \\*________________________*/" );

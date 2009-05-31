@@ -33,16 +33,16 @@ void destroy_win (WINDOW *window)
 
 void get_focus (WINDOW *window)
 {
-  wattron(window, COLOR_PAIR(10));
+  wattron(window, COLOR_PAIR(1));
   wborder(window, 0, 0, ' ', ' ', '/', '\\', '\\', '/');
-  wattroff(window, COLOR_PAIR(10));
+  wattroff(window, COLOR_PAIR(1));
   wrefresh(window);
 }
 
 void drop_focus (WINDOW  *window)
 {
-  wattron(window, COLOR_PAIR(40));
+  wattron(window, COLOR_PAIR(4));
   wborder(window, ' ', ' ', ' ', ' ', '/', '\\', '\\', '/');
-  wattroff(window, COLOR_PAIR(40));
+  wattroff(window, COLOR_PAIR(4));
   wrefresh(window);
 }

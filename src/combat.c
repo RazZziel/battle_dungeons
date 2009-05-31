@@ -318,9 +318,9 @@ void select_character()
 #if 0
     pc_selection_menu_win = newwin( 15, 40, LINES*3/4-20, COLS/2-40);
     get_focus(pc_selection_menu_win);
-    wattron(pc_selection_menu_win, COLOR_PAIR(30));
+    wattron(pc_selection_menu_win, COLOR_PAIR(3));
     mvwprintw( pc_selection_menu_win, 1, 3, "Select player" );
-    wattron(pc_selection_menu_win, COLOR_PAIR(50));
+    wattron(pc_selection_menu_win, COLOR_PAIR(5));
     mvwprintw( pc_selection_menu_win, 3, 2, "Name   :" ); //scanf( "%c", *pc->name );
     mvwprintw( pc_selection_menu_win, 4, 2, "Race   :" ); //scanf( "%c", *pc->raza );
 
@@ -348,7 +348,7 @@ void configure_test_enemies()
 
     enemy_selection_menu_win = newwin( 10, 29, LINES/2-10, COLS/2-4);
     get_focus( enemy_selection_menu_win );
-    wattron(enemy_selection_menu_win, COLOR_PAIR(30));
+    wattron(enemy_selection_menu_win, COLOR_PAIR(3));
     mvwprintw( enemy_selection_menu_win, 1, 3, "Select enemy:" );
 
     option = menu( enemy_selection_menu_win, y+2, menu_options, MAIN_MENU_PAIR );

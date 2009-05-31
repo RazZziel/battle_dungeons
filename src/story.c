@@ -5,7 +5,7 @@ void
 story_mode() {
   int i;
   erase();
-  attron(COLOR_PAIR(40));
+  attron(COLOR_PAIR(4));
   mvprintw( 10, 10, "[LOADING]   " );
   refresh();
   usleep( 500000 );
