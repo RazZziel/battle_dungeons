@@ -5,7 +5,6 @@
 #include <ncurses.h>
 #include <string.h>
 #include <math.h>
-#include <popt.h>
 #include <assert.h>
 #include <time.h>
 

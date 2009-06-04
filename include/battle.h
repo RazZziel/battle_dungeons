@@ -2,6 +2,7 @@
 #define BATTLE_H
 
 #include <ncurses.h>
+#include <stdbool.h>
 #include "grid.h"
 
 #define AUTHOR "RazZziel"

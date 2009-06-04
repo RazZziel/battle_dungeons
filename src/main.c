@@ -15,10 +15,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ncurses.h>
-#include <popt.h>
 #include <assert.h>
 #include <time.h>
 #include <unistd.h>  // usleep
+
+#ifdef HAVE_POPT /*TODO*/
+# include <popt.h>
+#endif
 
 #include "menus.h"
 #include "windows.h"
@@ -80,7 +83,7 @@ void intro()
 void init(int argc, const char **argv)
 {
     /* command line options parsing */
-
+#ifdef HAVE_POPT
     bool * argLol = FALSE;
     int rc;
 
@@ -92,6 +95,7 @@ void init(int argc, const char **argv)
     poptContext context = poptGetContext( NULL, argc, argv, optionsTable, 0 );
 
     while ((rc = poptGetNextOpt(context)) > 0);
+#endif
 
     /* Graphics */
 #ifndef DEBUG_PARSER

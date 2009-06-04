@@ -1,6 +1,7 @@
 #ifndef CHARACTER_H
 #define CHARACTER_H
 
+#include <stdbool.h>
 
 /* Actions */
 
@@ -79,7 +80,7 @@ typedef struct {
     int range_sight;
     bool aggressive;
 
-    object_t *objects;
+    object_t *objects[32];
     int n_objects;
     int money;
 
