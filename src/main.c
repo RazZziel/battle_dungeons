@@ -57,9 +57,9 @@ void intro()
         "|| |                (''/",
         "|| |                 \\/",
         "'' '",
+        NULL
     };
     int i, y=3, x=(COLS/2-13);
-    int n_lineas = sizeof(main_title) / sizeof(char *);
   
     erase();
     mvprintw( 3, 5, "Raziel Productions Presents" );
@@ -72,7 +72,7 @@ void intro()
     erase();
 
     usleep(150000);
-    for (i=0; i<n_lineas; i++) {
+    for ( i=0; main_title[i] != NULL; i++ ) {
         mvprintw( y++, x, "%s", main_title[i] );
         refresh();
         usleep(100000);
@@ -185,6 +185,7 @@ int main(int argc, const char *argv[])
 
     //intro();
 #if 0
+    intro();
     main_menu();
 #else
     new_combat(game);

@@ -134,7 +134,7 @@ map dweller {
 	"                                     k"
 	"                            k"
 } with {
-	'S' = entity soldier
+	'S' = entity castle_guard
 	'k' = entity kobold
 	',' = entity key
 }

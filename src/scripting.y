@@ -11,6 +11,10 @@
 #define YYERROR_VERBOSE
 #define ASSIGN_CHAR_PROPERTY(_field_,_value_) \
     parser.current_definition.data.entity.data.character->_field_ = _value_
+#define COPY_IF_SET(_destination_,_source_,_field_ ) \
+    if (_source_->data.entity._field_ != 0)          \
+        _destination_->data.entity._field_ =         \
+            _source_->data.entity._field_;
 
 extern char* yytext;
 extern int yyget_lineno();
@@ -25,6 +29,9 @@ void *check_cache_size( void *cache, int cache_lines,
 definition_t *find_definition(char *name, item_type_t type);
 map_rule_t *find_rule(char name, item_type_t type);
 void assign_node(grid_node_t *node, char *line, int j, int i);
+void copy_entity_t(definition_t *destination, definition_t *source);
+void copy_object_t(definition_t *destination, definition_t *source);
+void copy_character_t(definition_t *destination, definition_t *source);
 
 int mapflag=0;
 char *yyfilename=NULL;
@@ -203,7 +210,7 @@ function_id: IDENTIFIER '(' expression_list ')'
 
 /* Entities */
 
-entity_definition: ENTITY entity_type IDENTIFIER entity_hierarchy
+entity_definition: ENTITY entity_type IDENTIFIER
 	{
             parser.current_definition.name = $<str>3;
             parser.current_definition.type = RULE_ENTITY;
@@ -224,7 +231,7 @@ entity_definition: ENTITY entity_type IDENTIFIER entity_hierarchy
                 yyerror( "Unknown entity type %d", $<val>2 );
             }
 	}
-	'{' entity_content '}'
+	entity_hierarchy '{' entity_content '}'
 	{
             parser.definition_cache = check_cache_size( parser.definition_cache,
                                                         parser.definition_cache_lines,
@@ -244,8 +251,21 @@ entity_type:
 	{ yyerror( "Expected type of entity (pc|npc|object)"
                    " before entity identifier." ); }
 	;
+
+
 entity_hierarchy: | EXTENDS '(' superclass_list ')';
-superclass_list: IDENTIFIER | superclass_list ',' IDENTIFIER;
+superclass_list: superclass_id | superclass_list ',' superclass_id;
+superclass_id: IDENTIFIER
+	{
+            definition_t *definition = find_definition($<str>1, RULE_ENTITY);
+            if ( !definition )
+                yyerror("undefined entity '%s'", $<str>1);
+
+            copy_entity_t( &parser.current_definition, definition );
+	}
+	;
+
+
 entity_content: entity_line | entity_content entity_line;
 entity_line:
 	  TILE '=' MAP_TILE
@@ -521,4 +541,70 @@ map_rule_t *find_rule(char name, item_type_t type)
         }
     }
     return NULL;
+}
+
+/*TODO: Pig disgusting. Refactor into some sort of class methods. Now.*/
+void copy_entity_t(definition_t *destination, definition_t *source)
+{
+    /* Copy fields that are set to some value to the current
+       definition being parsed, as a default value that can
+       be later overwritten */
+
+    COPY_IF_SET(destination, source, x);
+    COPY_IF_SET(destination, source, y);
+    COPY_IF_SET(destination, source, color);
+    COPY_IF_SET(destination, source, tile);
+    COPY_IF_SET(destination, source, name);
+
+    switch( source->data.entity.type )
+    {
+    case ENTITY_PC:
+    case ENTITY_NPC:
+        copy_character_t( destination, source );
+        break;
+    case ENTITY_OBJECT:
+        copy_object_t( destination, source );
+        break;
+    default:
+        break;
+    }
+}
+
+void copy_object_t(definition_t *destination, definition_t *source)
+{
+    COPY_IF_SET(destination, source, data.object->price);
+}
+void copy_character_t(definition_t *destination, definition_t *source)
+{
+    COPY_IF_SET(destination, source, data.character->hp);
+    COPY_IF_SET(destination, source, data.character->mp);
+    COPY_IF_SET(destination, source, data.character->gender);
+    COPY_IF_SET(destination, source, data.character->race);
+    COPY_IF_SET(destination, source, data.character->class_);
+    COPY_IF_SET(destination, source, data.character->alignment1);
+    COPY_IF_SET(destination, source, data.character->alignment2);
+
+    COPY_IF_SET(destination, source, data.character->deity);
+    COPY_IF_SET(destination, source, data.character->age);
+    COPY_IF_SET(destination, source, data.character->height);
+    COPY_IF_SET(destination, source, data.character->weight);
+
+    COPY_IF_SET(destination, source, data.character->str);
+    COPY_IF_SET(destination, source, data.character->dex);
+    COPY_IF_SET(destination, source, data.character->con);
+    COPY_IF_SET(destination, source, data.character->intl);
+    COPY_IF_SET(destination, source, data.character->wiz);
+    COPY_IF_SET(destination, source, data.character->cha);
+
+    COPY_IF_SET(destination, source, data.character->hp);
+    COPY_IF_SET(destination, source, data.character->hp_max);
+    COPY_IF_SET(destination, source, data.character->mp);
+    COPY_IF_SET(destination, source, data.character->mp_max);
+    COPY_IF_SET(destination, source, data.character->size);
+    COPY_IF_SET(destination, source, data.character->speed);
+
+    COPY_IF_SET(destination, source, data.character->exp);
+    COPY_IF_SET(destination, source, data.character->level);
+    COPY_IF_SET(destination, source, data.character->range_sight);
+    COPY_IF_SET(destination, source, data.character->aggressive);
 }

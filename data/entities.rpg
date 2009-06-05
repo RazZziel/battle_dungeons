@@ -1,68 +1,76 @@
-entity npc soldier extends(soldier,elf) {
-       tile = 'S'
-       name = "Zarovich"
-       color = red
-       hp = 30
-       mp = 13
-       aggressive = false
-       inventory = (1*potion,10*gold,1*key_chest)
-       #action on_interact piss_off_soldier()
+/* ex: set tabstop=8 expandtab: */
+
+entity npc soldier {
+        color = red
+}
+
+entity npc elf {
+        tile = 'S'
+        hp = 30
+        mp = 13
+}
+
+entity npc castle_guard extends(soldier,elf) {
+        name = "Zarovich"
+        aggressive = false
+        inventory = (1*potion,10*gold,1*key_chest)
+        #action on_interact piss_off_soldier()
 }
 
 action piss_off_soldier() {
-       say("I got this key I'm not giving you, how cruel am I?")
-       pissed_off += 1
+        say("I got this key I'm not giving you, how cruel am I?")
+        pissed_off += 1
 }
 
 entity pc player {
-       tile = '@'
-       name = "Raziel"
-       color = red
-       hp = 30
-       mp = 13
-       str = 10
-       range_sight = 5
+        tile = '@'
+        name = "Raziel"
+        color = red
+        hp = 30
+        mp = 13
+        str = 10
+        range_sight = 5
 }
 
 entity npc skeleton {
-       tile = 'z'
-       color = white
+        tile = 'z'
+        color = white
 }
 entity npc kobold {
-       tile = 'k'
-       name = "Kobold"
-       color = blue
-       hp = 20
-       mp = 0
-       str = 2
-       aggressive = true
+        tile = 'k'
+        name = "Kobold"
+        color = blue
+        hp = 20
+        mp = 0
+        str = 2
+        aggressive = true
 }
 entity npc orc {
-       tile = 'o'
-       color = green
+        tile = 'o'
+        color = green
 }
 entity npc gobblin {
-       tile = 'g'
-       color = blue
+        tile = 'g'
+        color = blue
 }
 
 
 entity object wood_weapon {
-       tile = '('
-       color = red
+        tile = '('
+        color = red
 }
 entity object metal_weapon {
-       tile = '('
-       color = white
+        tile = '('
+        color = white
 }
 entity object key {
-       tile = ','
-       color = white
+        tile = ','
+        color = white
 }
 
 action warp() {
-       msg("lol")
+        msg("lol")
 }
 action loose_brick000() {
-       msg("lal")
+        msg("lal")
 }
