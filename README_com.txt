@@ -31,24 +31,23 @@ Comentarios:
             - Refactorizar el motor del juego para soportar las
               nuevas funcionalidades definidas en los scripts.
 
-        Capacidades de los scripts a día de la entrega:
+        Capacidades de los scripts a día de hoy:
             - Mapas, cada uno con varias capas superpuestas de tiles
               ("baldosas"), entidades o eventos. Los mapas llevan
               asociados una serie de materiales, que son los que
               definen la apariencia gráfica de cada tile. Ahora mismo
               sólo está implementado el soporte para juegos en modo
-              texto, pero en teoría se podrían soportar a mapas
-              gráficos bidimensionales o tridimensionales sin mucho
-              esfuerzo.
-                  ejemplo: battle_dungeons/data/maps.rpg
-                           battle_dungeons/data/materials.rpg
+              texto, pero en teoría se podrían soportar mapas gráficos
+              bidimensionales o tridimensionales sin mucho esfuerzo.
+                  ejemplo:   battle_dungeons/data/maps.rpg
+                             battle_dungeons/data/materials.rpg
             - Entidades, que pueden ser objetos o personajes, y son
               definidos de maneja jerárquica, con herencia múltiple.
               Cada entidad hereda una serie de propiedades de sus
               "superclases", que puede sobreescribir o ampliar
-                  ejemplo: battle_dungeons/data/entities.rpg
+                  ejemplo:   battle_dungeons/data/entities.rpg
 
-        Capacidades planeadas pero no implementadas:
+        TODO:
             - Acciones, que son pequeños procedimientos implementados
               en un sencillo lenguaje, y que se pueden ser asociadas
               a eventos en mapas o entidades, para que por ejemplo al
@@ -57,12 +56,9 @@ Comentarios:
               se active, o simplemente que al pasar por una puerta el
               jugador se teletransporte a otro mapa.
 
-
-
-[1] ________WIKIPEDIA________
-
-
+        FIXME:
+            - Limpiar todos los pig disgusting hacks.
 
 
 
-
+[1] http://en.wikipedia.org/wiki/Roguelike
