@@ -272,7 +272,7 @@ void main_loop()
     do
     {
         /* Drawing */
-
+    draw_grid( game.current_grid );
         if ( !game.pc->data.character->status.blind )
             visibility_area();
 

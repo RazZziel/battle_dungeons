@@ -29,7 +29,7 @@ entity pc player {
         hp = 30
         mp = 13
         str = 10
-        range_sight = 5
+        range_sight = 7
 }
 
 entity npc skeleton {

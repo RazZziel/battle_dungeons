@@ -23,6 +23,12 @@ static inline int center_y(grid_t *grid, int y)
                  : (game.grid_y_offset));
 }
 
+static inline bool in_sight_range(entity_t *entity, int y, int x)
+{
+    return ( ( pow(x-entity->x, 2) + pow(y-entity->y, 2) )
+             <= pow(entity->data.character->range_sight, 2) );
+}
+
 void visibility_area()
 {
     for (int j=max(0, (game.pc->y)-game.pc->data.character->range_sight);
@@ -33,7 +39,7 @@ void visibility_area()
              i<min(game.current_grid->width, (game.pc->x)+game.pc->data.character->range_sight);
              i++)
         {
-            if ( ((pow(i-(game.pc->x), 2) + pow(j-(game.pc->y), 2)) <= pow(game.pc->data.character->range_sight, 2)) &&
+            if ( in_sight_range(game.pc, j, i) &&
                  (!grid_node(game.current_grid, j, i)->visible) )
             {
                 grid_node(game.current_grid, j, i)->visible = TRUE;
@@ -74,7 +80,11 @@ inline void draw_node(int y, int x)
 
     if (node)
     {
-        wattron( game.game_win, COLOR_PAIR(node->color) );
+        wattron( game.game_win,
+                 ( in_sight_range(game.pc, y, x)
+                   ? COLOR_PAIR(node->color) | A_BOLD
+                   : COLOR_PAIR(8) | A_DIM ) );
+
         mvwprintw( game.game_win,
                    center_y(game.current_grid,y),
                    center_x(game.current_grid,x),
@@ -103,11 +113,17 @@ inline void draw_entity(entity_t *pc)
         draw_grid();
     }
 
-    if (grid_node(game.current_grid, pc->y, pc->x)->visible)
+    if (!in_sight_range(game.pc, pc->y, pc->x))
+    {
+        draw_node(pc->y, pc->x);
+    }
+    else if (grid_node(game.current_grid, pc->y, pc->x)->visible)
     {
         wattron( game.game_win, COLOR_PAIR(pc->color) );
-        mvwprintw( game.game_win, center_y(game.current_grid, pc->y),
-                   center_x(game.current_grid,pc->x), "%c", pc->tile );
+        mvwprintw( game.game_win,
+                   center_y(game.current_grid, pc->y),
+                   center_x(game.current_grid, pc->x),
+                   "%c", pc->tile );
         wrefresh( game.game_win );
     }
 }

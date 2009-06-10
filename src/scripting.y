@@ -35,7 +35,7 @@ void copy_character_t(definition_t *destination, definition_t *source);
 
 int mapflag=0;
 char *yyfilename=NULL;
-grid_node_t default_grid_node = { ' ', 20, FALSE, TRUE };
+grid_node_t default_grid_node = { ' ', 20, FALSE, /*TRUE*/FALSE };
 %}
 
 
