@@ -124,10 +124,9 @@ void combat_menu()
         "(A)ttack",
         "(M)agic",
         "(I)nventory",
-        "",
-    };
+        NULL };
   
-    assert(strlen(menu_options[(sizeof(menu_options) / sizeof(char *))-1]) == 0);
+    assert( menu_options[(sizeof(menu_options) / sizeof(char *))-1] == NULL );
     combat_menu_win = newwin(COMBAT_MENU_HEIGHT, COMBAT_MENU_WIDTH,
                              LINES-COMBAT_MENU_HEIGHT, COLS-COMBAT_MENU_WIDTH-3);
     get_focus(combat_menu_win);
@@ -163,7 +162,7 @@ void help_menu()
         "M      -  magic",
         "",
         "  Misc.",
-        "Enter  -  combat menu",
+        "Enter  -  combat menu     H      -  help dialog",
         "i      -  inventory",
         NULL };
 
@@ -278,7 +277,7 @@ void main_loop()
     generate_game_screen();
     keypad( game.game_win, TRUE );  
 
-    draw_grid( game.current_grid );
+    help_menu();
 
     do
     {
@@ -354,10 +353,9 @@ void configure_test_enemies()
         "Summon enemy",
         "Random enemy",
         "Cancel",
-        "",
-    };
+        NULL };
 
-    assert( strlen(menu_options[(sizeof(menu_options) / sizeof(char *))-1]) == 0 );
+    assert( menu_options[(sizeof(menu_options) / sizeof(char *))-1] == NULL );
 
     enemy_selection_menu_win = newwin( 10, 29, LINES/2-10, COLS/2-4);
     get_focus( enemy_selection_menu_win );

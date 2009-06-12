@@ -135,10 +135,9 @@ void main_menu()
         "Modo Arcade",
         "Modo Historia",
         "Salir",
-        "",
-    };
+        NULL };
     int option, y, x;
-    assert(strlen(menu_options[(sizeof(menu_options) / sizeof(char *))-1]) == 0);
+    assert( menu_options[(sizeof(menu_options) / sizeof(char *))-1] == NULL );
   
     do
     {
@@ -184,7 +183,7 @@ int main(int argc, const char *argv[])
 #endif
 
     //intro();
-#if 0
+#if 1
     intro();
     main_menu();
 #else

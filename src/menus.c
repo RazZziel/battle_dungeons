@@ -21,41 +21,44 @@ void move_selection (WINDOW *window, int *option, int direction, int left, int r
     *option += direction;
 }
 
-int menu(WINDOW *menu_win, int menu_y, char *options[], int color_pair)
+int menu(WINDOW *menu_win, int menu_y, char **options, int color_pair)
 {
-    int n_options = 0;
+    char **options_p;
     int option = 1,
-        key, i, y = menu_y, x,
-        menu_width, longer_option = 0;
+        key, x,
+        menu_width,
+        width, n_options,
+        left_offset,
+        right_offset;
 
-    while (strlen(options[n_options]))
+    width = n_options = 0;
+    options_p = options;
+    while ( *options_p )
     {
-        if (strlen(options[n_options]) > strlen(options[longer_option]))
-        {
-            longer_option = n_options;
-        }
-        n_options++;
+        int line_length = strlen( *(options_p++) );
+        if (width < line_length)
+            width = line_length;
+        ++n_options;
     };
   
     menu_width = getmaxx(menu_win);
   
-    wattron(menu_win, COLOR_PAIR(color_pair));
-    wattron(menu_win, A_BOLD);
-    x = (menu_width-strlen(options[0]))/2;
-    mvwprintw( menu_win, y, x, "%s", options[0] );
-  
-    wattroff(menu_win, A_BOLD);
-    for ( i=1; i<n_options; i++ )
+    wattron( menu_win, COLOR_PAIR(color_pair) );
+
+    options_p = options;
+    for (int i=menu_y; *options_p != NULL; i+=2,options_p++)
     {
-        x = (menu_width-strlen(options[i]))/2;
-        mvwprintw( menu_win, y+=2, x, "%s", options[i] );
+        if (i==menu_y) wattron( menu_win, A_BOLD );
+        x = (menu_width-strlen(*options_p))/2;
+        mvwprintw( menu_win, i, x, "%s", *options_p );
+        if (i==menu_y) wattroff( menu_win, A_BOLD );
     }
   
-#define LEFT ((menu_width-strlen(options[longer_option]))/2 - 3)
-#define RIGHT (LEFT + strlen(options[longer_option]) + 4)
+    left_offset  = (menu_width-width)/2 - 3;
+    right_offset = left_offset + width + 5;
   
-    mvwprintw( menu_win, menu_y, LEFT,  "<|" );
-    mvwprintw( menu_win, menu_y, RIGHT, "|>" );
+    mvwprintw( menu_win, menu_y, left_offset,  "<|" );
+    mvwprintw( menu_win, menu_y, right_offset, "|>" );
   
     wrefresh(menu_win);
   
@@ -70,14 +73,14 @@ int menu(WINDOW *menu_win, int menu_y, char *options[], int color_pair)
                             ( (option < n_options)
                               ? 1
                               : -n_options+1 ),
-                            LEFT, RIGHT, color_pair );
+                            left_offset, right_offset, color_pair );
             break;
         case KEY_UP:
             move_selection( menu_win, &option,
                             ( (option > 1)
                               ? -1
                               : n_options-1 ),
-                            LEFT, RIGHT, color_pair );
+                            left_offset, right_offset, color_pair );
             break;
         default:
             break;

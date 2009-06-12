@@ -31,7 +31,7 @@ void prompt(char *title, char **text)
     int width, height;
 
     width = height = 0;
-    line = (char**)text;
+    line = text;
     while (*line != NULL)
     {
         int line_length = strlen( *(line++) );
@@ -49,10 +49,10 @@ void prompt(char *title, char **text)
     mvwprintw( win, 1, (width-strlen(title))/2, title );
     wattroff( win, A_BOLD );
 
-    line = (char**)text;
-    for (int i=3; *line != NULL; i++)
+    line = text;
+    for (int i=3; *line != NULL; i++,line++)
     {
-        mvwprintw(win, i, 4, *(line++));
+        mvwprintw(win, i, 4, *line);
     }
 
     wattron( win, A_BOLD );
