@@ -32,11 +32,11 @@ static inline bool in_sight_range(entity_t *entity, int y, int x)
 void visibility_area()
 {
     for (int j=max(0, (game.pc->y)-game.pc->data.character->range_sight);
-         j<min(game.current_grid->height, (game.pc->y)+game.pc->data.character->range_sight);
+         j<=min(game.current_grid->height, (game.pc->y)+game.pc->data.character->range_sight);
          j++)
     {
         for (int i=max(0, (game.pc->x)-game.pc->data.character->range_sight);
-             i<min(game.current_grid->width, (game.pc->x)+game.pc->data.character->range_sight);
+             i<=min(game.current_grid->width, (game.pc->x)+game.pc->data.character->range_sight);
              i++)
         {
             if ( in_sight_range(game.pc, j, i) &&
@@ -83,12 +83,14 @@ inline void draw_node(int y, int x)
         wattron( game.game_win,
                  ( in_sight_range(game.pc, y, x)
                    ? COLOR_PAIR(node->color) | A_BOLD
-                   : COLOR_PAIR(8) | A_DIM ) );
+                   : COLOR_PAIR(8) | A_BOLD ) );
 
         mvwprintw( game.game_win,
                    center_y(game.current_grid,y),
                    center_x(game.current_grid,x),
                    "%c", node->tile );
+
+        wattroff( game.game_win, A_BOLD );
     }
     else
     {

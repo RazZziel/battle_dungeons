@@ -1,6 +1,7 @@
 #include <ncurses.h>
 #include <stdarg.h>
 #include "battle.h"
+#include "windows.h"
 
 extern game_engine_t game;
 
@@ -21,6 +22,45 @@ void message(const char *fmt, ...)
   
   va_end(argp);
   wrefresh(game.message_win);
+}
+
+void prompt(char *title, char **text)
+{
+    WINDOW * win;
+    char **line;
+    int width, height;
+
+    width = height = 0;
+    line = (char**)text;
+    while (*line != NULL)
+    {
+        int line_length = strlen( *(line++) );
+        if (width < line_length)
+            width = line_length;
+        ++height;
+    }
+    width += 8;
+    height += 5;
+
+    win = newwin( height, width, (LINES-height)/2, (COLS-width)/2 );
+    get_focus( win );
+
+    wattron( win, A_BOLD );
+    mvwprintw( win, 1, (width-strlen(title))/2, title );
+    wattroff( win, A_BOLD );
+
+    line = (char**)text;
+    for (int i=3; *line != NULL; i++)
+    {
+        mvwprintw(win, i, 4, *(line++));
+    }
+
+    wattron( win, A_BOLD );
+    mvwprintw( win, height-2, width-20, "Press any key..." );
+    wattroff( win, A_BOLD );
+
+    wgetch( win );
+    destroy_win( win );
 }
 
 void destroy_win (WINDOW *window)

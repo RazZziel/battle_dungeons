@@ -149,35 +149,26 @@ void combat_menu()
 
 void help_menu()
 {
-#define MENU_WIN_HEIGHT LINES-10
-#define MENU_WIN_WIDTH  COLS-10
-    WINDOW * help_win;
-    int i;
+    char *help_text[] = {
+        "  Movement",
+        "",
+        "    q   w   e      y   k   u      7   8   9         ^     ",
+        "      \\ | /          \\ | /          \\ | /           |  ",
+        "   a -  s  - d    h -  .  - l    4 -  5  - 6   < -  ,  - >",
+        "      / | \\          / | \\          / | \\           |  ",
+        "    z   x   c      n   j   m      1   2   3         v     ",
+        "",
+        "  Actions",
+        "A      -  attack          D      -  get drunk",
+        "M      -  magic",
+        "",
+        "  Misc.",
+        "Enter  -  combat menu",
+        "i      -  inventory",
+        NULL };
 
-    help_win = newwin(MENU_WIN_HEIGHT, MENU_WIN_WIDTH, 5, 5);
-    get_focus(help_win);
-    mvwprintw(help_win, i=1, (MENU_WIN_WIDTH-20)/2, "Battle Dungeons Help");
-    i++;
-    mvwprintw(help_win, ++i, 5, "Movement");
-    mvwprintw(help_win, ++i, 3, "                           N");
-    mvwprintw(help_win, ++i, 3, "      7   8   9          W + E");
-    mvwprintw(help_win, ++i, 3, "        \\ | /              S");
-    mvwprintw(help_win, ++i, 3, "{   4 --  O  -- 6   }");
-    mvwprintw(help_win, ++i, 3, "        / | \\");
-    mvwprintw(help_win, ++i, 3, "      1   2   3");
-    i++;
-    mvwprintw(help_win, ++i, 5, "Actions");
-    mvwprintw(help_win, ++i, 3, "a      -  attack");
-    mvwprintw(help_win,   i, (MENU_WIN_WIDTH-16)/2, "d      -  get drunk");
-    mvwprintw(help_win, ++i, 3, "m      -  magic");
-    i++;
-    mvwprintw(help_win, ++i, 5, "Misc.");
-    mvwprintw(help_win, ++i, 3, "Enter  -  combat menu");
-    mvwprintw(help_win, ++i, 3, "i      -  inventory");
-
-    mvwprintw(help_win, MENU_WIN_HEIGHT-2, MENU_WIN_WIDTH-35, "Press any key...");
-    wgetch(help_win);
-    destroy_win(help_win);
+    assert( help_text[(sizeof(help_text) / sizeof(char *))-1] == NULL );
+    prompt( "Battle Dungeons Help", help_text );
 }
 
 void refresh_screen()
@@ -202,18 +193,38 @@ void get_input()
 
         switch( wgetch(game.game_win) )
         {
+        case 'h':
+        case 'a':
+        case '4':
         case KEY_LEFT:  walk(-1, 0, game.pc ); break;
-        case '4':       walk(-1, 0, game.pc ); break;
+        case 'l':
+        case 'd':
+        case '6':
         case KEY_RIGHT: walk( 1, 0, game.pc ); break;
-        case '6':       walk( 1, 0, game.pc ); break;
+        case 'k':
+        case 'w':
+        case '8':
         case KEY_UP:    walk( 0,-1, game.pc ); break;
-        case '8':       walk( 0,-1, game.pc ); break;
+        case 'j':
+        case 'x':
+        case '2':
         case KEY_DOWN:  walk( 0, 1, game.pc ); break;
-        case '2':       walk( 0, 1, game.pc ); break;
+        case 'y':
+        case 'q':
         case '7':       walk(-1,-1, game.pc ); break;
+        case 'u':
+        case 'e':
         case '9':       walk( 1,-1, game.pc ); break;
+        case 'n':
+        case 'z':
         case '1':       walk(-1, 1, game.pc ); break;
+        case 'm':
+        case 'c':
         case '3':       walk( 1, 1, game.pc ); break;
+        case '.':
+        case 's':
+        case '5':
+        case ',':       /*TODO:Interact*/ break;
 	
             //case 'a': attack( &game.pc, &game.enemy );   break;
             //case 'm': magic();                        break;
@@ -225,11 +236,11 @@ void get_input()
             combat_menu( game.current_grid );
             touchwin( game.game_win );
             break;
-        case 'h':
+        case 'H':
             help_menu();
             touchwin( game.game_win );
             break;
-        case 'd':
+        case 'D':
             game.pc->data.character->status.drunk =! game.pc->data.character->status.drunk;
             break;
 
@@ -272,9 +283,11 @@ void main_loop()
     do
     {
         /* Drawing */
-    draw_grid( game.current_grid );
+
         if ( !game.pc->data.character->status.blind )
             visibility_area();
+
+        draw_grid( game.current_grid );/*REMOVE*/
 
         for (int i=0; i<game.n_entities; i++)
         {
