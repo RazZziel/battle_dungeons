@@ -182,8 +182,7 @@ int main(int argc, const char *argv[])
     return 0;
 #endif
 
-    //intro();
-#if 1
+#if 0
     intro();
     main_menu();
 #else
