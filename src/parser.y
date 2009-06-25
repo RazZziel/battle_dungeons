@@ -40,16 +40,21 @@ grid_node_t default_grid_node = { ' ', 20, FALSE, /*TRUE*/FALSE };
 
 
 %union {
-    int val;
-    char *str;
-    char car;
+    int                val;
+    char*              str;
+    char               car;
+    expression_val_t*  expression_val;
+    expression_val_t** expression_val_list;
+    statement_t*       statement;
 }
 
-%expect 34
-%type <val> exp_int exp_logical color_id entity_type
+%expect 35
+%type <val>             color_id entity_type
+%type <expression_val>  expression exp_int exp_bool exp_str exp_list bool_maybe lvalue exp_item
+%type <expression_val_list> expression_seq
+%type <statement>       statement stm_assignment function_call
 
-%token <val> INTEGER
-%token <str> STRING
+%token <expression_val> INTEGER B_TRUE B_FALSE B_MAYBE STRING
 %token <str> IDENTIFIER
 %token COMPOUND_IDENTIFIER
 %token MAP_TILE COLOR_CONSTANT
@@ -60,8 +65,8 @@ grid_node_t default_grid_node = { ' ', 20, FALSE, /*TRUE*/FALSE };
 %token STR DEX CON INTL WIZ CHA
 %token EXTENDS
 %token EQ_ADD EQ_SUB EQ_MUL EQ_DIV
-%token <val> B_TRUE B_FALSE B_MAYBE
 %token ON_TOUCH ON_INTERACT
+%token EQ NE LT LE GT GE OR AND NOT
 
 %%
 
@@ -192,7 +197,7 @@ map_tile_type:
                     &definition->data.entity,
                     sizeof(definition->data.entity) );
 	}
-	| ACTION action_trigger function_id
+	| ACTION action_trigger function_call
 	{
             definition_t *definition = find_definition($<str>3, RULE_ACTION);
             if ( !definition )
@@ -205,8 +210,12 @@ map_tile_type:
                     &definition->data.action,
                     sizeof(definition->data.action) );
 	}
+	;
 
-function_id: IDENTIFIER '(' expression_list ')'
+function_call: IDENTIFIER '(' expression_seq ')' { $$ = new_stm_simpl( $1, $3, STM_FCALL ); };
+function_decl: IDENTIFIER '(' identifier_seq ')';
+
+identifier_seq: | IDENTIFIER ',' identifier_seq | IDENTIFIER;
 
 /* Entities */
 
@@ -275,15 +284,15 @@ entity_line:
 	| COLOR '=' COLOR_CONSTANT /* color_pair */
 	{ parser.current_definition.data.entity.color = $<val>3; }
 
-	| HP '=' exp_int  { ASSIGN_CHAR_PROPERTY(hp_max, $<val>3); }
-	| MP '=' exp_int  { ASSIGN_CHAR_PROPERTY(mp_max, $<val>3); }
-	| STR '=' exp_int { ASSIGN_CHAR_PROPERTY(str, $<val>3); }
-	| CON '=' exp_int { ASSIGN_CHAR_PROPERTY(con, $<val>3); }
+	| HP   '='  exp_int   { ASSIGN_CHAR_PROPERTY(hp_max, $<val>3); }
+	| MP   '='  exp_int   { ASSIGN_CHAR_PROPERTY(mp_max, $<val>3); }
+	| STR  '='  exp_int   { ASSIGN_CHAR_PROPERTY(str, $<val>3); }
+	| CON  '='  exp_int   { ASSIGN_CHAR_PROPERTY(con, $<val>3); }
 
-	| RANGE_SIGHT '=' exp_int    { ASSIGN_CHAR_PROPERTY(range_sight, $<val>3); }
-	| AGGRESSIVE '=' exp_logical { ASSIGN_CHAR_PROPERTY(aggressive, $<val>3); }
-	| IDENTIFIER '=' expression
-	| ACTION action_trigger function_id
+	| RANGE_SIGHT  '=' exp_int     { ASSIGN_CHAR_PROPERTY(range_sight, $<val>3); }
+	| AGGRESSIVE   '=' exp_bool    { ASSIGN_CHAR_PROPERTY(aggressive, $<val>3); }
+	| IDENTIFIER   '=' expression
+	| ACTION action_trigger function_call
 	{
             definition_t *definition = find_definition($<str>3, RULE_ACTION);
             if ( !definition )
@@ -293,7 +302,7 @@ entity_line:
 
 /* Actions */
 
-action_definition: ACTION function_id
+action_definition: ACTION function_decl
 	{
             parser.current_definition.name = $<str>2;
             parser.current_definition.type = RULE_ACTION;
@@ -333,9 +342,9 @@ material_line:
 	{ parser.current_definition.data.material.tile = $<car>3; }
 	| COLOR '=' color_pair
 	{ parser.current_definition.data.material.color = $<val>3; }
-	| SOLID '=' exp_logical
+	| SOLID '=' exp_bool
 	{ parser.current_definition.data.material.solid = $<val>3; }
-	| VISIBLE '=' exp_logical
+	| VISIBLE '=' exp_bool
 	{ parser.current_definition.data.material.visible = $<val>3; }
 	;
 color_pair:
@@ -380,47 +389,114 @@ color_id:
 	;
 
 
-expression: IDENTIFIER
-	| COMPOUND_IDENTIFIER
-	| exp_logical
-	| exp_int
-	| exp_string
-	| exp_tuple
-	| exp_inventory
-	| '(' expression ')'
-	| MAP_TILE
+
+expression:
+  expr2 { $$ = $1; } 
+| expr2 EQ expr2 { $$ = new_expr_bin( $1, $3, EXPR_EQ ); }
+| expr2 NE expr2 { $$ = new_expr_bin( $1, $3, EXPR_NE ); }
+| expr2 LT expr2 { $$ = new_expr_bin( $1, $3, EXPR_LT ); }
+| expr2 LE expr2 { $$ = new_expr_bin( $1, $3, EXPR_LE ); }
+| expr2 GT expr2 { $$ = new_expr_bin( $1, $3, EXPR_GT ); }
+| expr2 GE expr2 { $$ = new_expr_bin( $1, $3, EXPR_GE ); }
+;
+
+expr2:
+  expr3 { $$ == $1; }
+| expr2 PLUS expr3  { $$ = new_expr_bin( $1, $3, EXPR_ADD ); }
+| expr2 MINUS expr3 { $$ = new_expr_bin( $1, $3, EXPR_SUB ); }
+;
+
+expr3:
+  expr4 { $$ = $1; }
+| expr3 MULT expr4   { $$ = new_expr_bin( $1, $3, EXPR_MUL ); }
+| expr3 DIVIDE expr4 { $$ = new_expr_bin( $1, $3, EXPR_DIV ); }
+;
+
+expr4:
+  NOT expr4             { $$ = new_expr_uni( $2, EXPR_BOOL_NOT ); }
+| '(' expression ')'    { $$ = $2; }
+| NUMBER                { $$ = new_expr_simpl( $1, EXPR_INT ); }
+| STRING                { $$ = new_expr_simpl( $1, EXPR_STR ); }
+;
+/*
+expression:
+	  IDENTIFIER                      { $$ = new_expr_simpl( $1, EXPR_VAR ); }
+//	| COMPOUND_IDENTIFIER             { $$ = new_expr_simpl( $1, EXPR_VAR ); }
+	| exp_bool                        { $$ = new_expr_simpl( $1, EXPR_BOOL ); }
+	| exp_int                         { $$ = new_expr_simpl( $1, EXPR_INT ); }
+	| exp_str                         { $$ = new_expr_simpl( $1, EXPR_STR ); }
+	| exp_list                        { $$ = new_expr_simpl( $1, EXPR_LIST ); }
+	| exp_item                        { $$ = new_expr_simpl( $1, EXPR_INV ); }
+	| '(' expression ')'              { $$ = $2; }
+	| MAP_TILE                        { $$ = NULL; }
 	;
-exp_logical: B_TRUE | B_FALSE | B_MAYBE
-	| exp_logical "||" exp_logical  { $$ = ( $1 || $3 ); }
-	| exp_logical "&&" exp_logical  { $$ = ( $1 && $3 ); }
-	| exp_logical "==" exp_logical  { $$ = ( $1 == $3 ); }
-	| exp_logical "!=" exp_logical  { $$ = ( $1 != $3 ); }
+exp_bool:
+	  B_TRUE                           { $$ = new_expr_simpl( $1, EXPR_BOOL ); }
+	| B_FALSE                          { $$ = new_expr_simpl( $1, EXPR_BOOL ); }
+	| bool_maybe                       { $$ = new_expr_simpl( $1, EXPR_BOOL_MAYBE ); }
+	| NOT exp_bool                     { $$ = new_expr_uni( $2, EXPR_BOOL_NOT ); }
+	| exp_bool    OR       exp_bool    { $$ = new_expr_bin( $1, $3, EXPR_BOOL_TRUE ); }
+	| exp_bool    AND      exp_bool    { $$ = new_expr_bin( $1, $3, EXPR_BOOL_TRUE ); }
+        | expression  EQUALS   expression  {  }
+        | expression  NEQUALS  expression  {  }
 	;
-exp_int: INTEGER
-	| exp_int '+' exp_int  { $$ = ( $1 + $3 ); }
-	| exp_int '-' exp_int  { $$ = ( $1 - $3 ); }
-	| exp_int '*' exp_int  { $$ = ( $1 * $3 ); }
-	| exp_int '/' exp_int  { $$ = ( $1 / $3 ); }
+bool_maybe:
+	B_MAYBE
+	{
+            expression_val_t val;
+            val.int_val = 50;
+            $$ = val;
+	}
+	| B_MAYBE '(' INTEGER ')' // Turn INTEGER into exp_int and eval()?
+	{
+            expression_val_t val;
+            if (($3 < 0) || ($3 > 100))
+                yyerror("probability values must be between 0 and 100");
+            val.int_val = $3;
+            $$ = val;
+	}
 	;
-exp_string: STRING;
-exp_tuple: '(' expression_list ')';
-exp_inventory: INTEGER '*' IDENTIFIER;
-expression_list: | expression ',' expression_list | expression;
+
+exp_int: INTEGER                           { $$ = new_expr_simpl( $1, EXPR_INT ); }
+	| exp_int     '+'      exp_int     { $$ = new_expr_bin( $1, $3, EXPR_ADD ); }
+	| exp_int     '-'      exp_int     { $$ = new_expr_bin( $1, $3, EXPR_SUB ); }
+	| exp_int     '*'      exp_int     { $$ = new_expr_bin( $1, $3, EXPR_MUL ); }
+	| exp_int     '/'      exp_int     { $$ = new_expr_bin( $1, $3, EXPR_DIV ); }
+	;
+exp_str: STRING                            { $$ = new_expr_simpl( $1, EXPR_STR ); }
+	| exp_str     '+'      exp_str     { $$ = new_expr_bin( $1, $3, EXPR_ADD ); }
+	| exp_str     '*'      exp_int     { $$ = new_expr_bin( $1, $3, EXPR_MUL ); }
+	;
+exp_list:
+	  '(' expression_seq ')'           { $$ = new_expr_simpl( $2, EXPR_LIST ); }
+	| exp_list    '+'      exp_list    { $$ = new_expr_bin( $1, $3, EXPR_ADD ); }
+	;
+expression_seq:
+	                                   { $$ = new_expr_list( NULL ); }
+	| expression                       { $$ = new_expr_list( $1 ); }
+	| expression ',' expression_seq    { $$ = add_expr_list( NULL, $1 ); }
+	;
+exp_item: INTEGER '*' IDENTIFIER;
 
 
-statement: st_assignment | st_declaration | function_id;
-st_assignment: lvalue '=' expression
-	| lvalue EQ_ADD exp_int  { $<val>1 = ( $<val>1 + $<val>3 ); }
-	| lvalue EQ_SUB exp_int  { $<val>1 = ( $<val>1 - $<val>3 ); }
-	| lvalue EQ_MUL exp_int  { $<val>1 = ( $<val>1 * $<val>3 ); }
-	| lvalue EQ_DIV exp_int  { $<val>1 = ( $<val>1 / $<val>3 ); }
+statement: stm_assignment | function_call;
+stm_assignment:
+	  lvalue  '='     expression  { $$ = new_stm_bin( $1, $3 ); }
+	| lvalue  EQ_ADD  expression  { $$ = new_stm_assig( $1, new_expr_bin( $1, $3, EXPR_ADD ) ); }
+	| lvalue  EQ_SUB  expression  { $$ = new_stm_assig( $1, new_expr_bin( $1, $3, EXPR_SUB ) ); }
+	| lvalue  EQ_MUL  expression  { $$ = new_stm_assig( $1, new_expr_bin( $1, $3, EXPR_MUL ) ); }
+	| lvalue  EQ_DIV  expression  { $$ = new_stm_assig( $1, new_expr_bin( $1, $3, EXPR_DIV ) ); }
 	;
-st_declaration: type IDENTIFIER;
-type: "int" | "string" | "bool";
 
-lvalue: IDENTIFIER | COMPOUND_IDENTIFIER;
+lvalue:   IDENTIFIER           { $$ = $<expression_val>1; }
+	| COMPOUND_IDENTIFIER  { $$ = $<expression_val>1; }
+	;
+*/
+
 
 %%
+
+
 
 int yyerror(const char *fmt, ...)
 {

@@ -12,9 +12,9 @@ Contenido:
         battle_dungeons/data             :  scripts de ejemplo
 
 Compilación:                    Ejecución:
-        cd battle_dungeons              cd battle_dungeons/src
-        ./autogen.sh                    ./battle_dungeons
-        ./configure
+        cd battle_dungeons              cd battle_dungeons
+        ./autogen.sh                    cd src
+        ./configure                     ./battle_dungeons
         make
 
 Comentarios:
@@ -59,6 +59,15 @@ Comentarios:
         FIXME:
             - Limpiar todos los pig disgusting hacks.
 
+
+Nota:
+        Conscientes de que el hecho de que el código esté en inglés puede
+        despertar recelos sobre su originalidad, informamos que el repositorio
+        que almacena el historial reciente de la aplicación se encuentra
+        disponible públicamente en:
+                   http://github.com/RazZziel/battle_dungeons
+        y pedimos disculpas por la probable poca adecuación de los mensajes de
+        commit y de muchos de los comentarios del código.
 
 
 [1] http://en.wikipedia.org/wiki/Roguelike

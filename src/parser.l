@@ -21,35 +21,44 @@ IDENTIFIER     [_a-zA-Z][_a-zA-Z0-9]*
 {WHITESPACE}+
 {NEWLINE}                { yylineno++; }
 
-map { return MAP; }
+map      { return MAP; }
 material { return MATERIAL; }
-entity { return ENTITY; }
-action { return ACTION; }
-extends { return EXTENDS; }
-pc { return PC; }
-npc { return NPC; }
-object { return OBJECT; }
-with { return WITH; }
-tile { return TILE; }
-color { return COLOR; }
-solid { return SOLID; }
-visible { return VISIBLE; }
-name { return NAME; }
-hp { return HP; }
-mp { return MP; }
-str { return STR; }
-dex { return DEX; }
-con { return CON; }
-intl { return INTL; }
-wiz { return WIZ; }
-cha { return CHA; }
+entity   { return ENTITY; }
+action   { return ACTION; }
+extends  { return EXTENDS; }
+pc       { return PC; }
+npc      { return NPC; }
+object   { return OBJECT; }
+with     { return WITH; }
+tile     { return TILE; }
+color    { return COLOR; }
+solid    { return SOLID; }
+visible  { return VISIBLE; }
+name     { return NAME; }
+hp       { return HP; }
+mp       { return MP; }
+str      { return STR; }
+dex      { return DEX; }
+con      { return CON; }
+intl     { return INTL; }
+wiz      { return WIZ; }
+cha      { return CHA; }
 range_sight { return RANGE_SIGHT; }
-aggressive { return AGGRESSIVE; }
-\+= { return EQ_ADD; }
-\-= { return EQ_SUB; }
-\*= { return EQ_MUL; }
-\/= { return EQ_DIV; }
-on_touch { return ON_TOUCH; }
+aggressive  { return AGGRESSIVE; }
+\+=     { return EQ_ADD; }
+\-=     { return EQ_SUB; }
+\*=     { return EQ_MUL; }
+\/=     { return EQ_DIV; }
+==      { return EQ; }
+!=      { return NE; }
+<       { return LT; }
+<=      { return LE; }
+>       { return GT; }
+>=      { return GE; }
+or      { return OR; }
+and     { return AND; }
+not     { return NOT; }
+on_touch    { return ON_TOUCH; }
 on_interact { return ON_INTERACT; }
 black   { yylval.val = COLOR_BLACK;   return COLOR_CONSTANT; }
 red     { yylval.val = COLOR_RED;     return COLOR_CONSTANT; }
@@ -60,9 +69,9 @@ magenta { yylval.val = COLOR_MAGENTA; return COLOR_CONSTANT; }
 cyan    { yylval.val = COLOR_CYAN;    return COLOR_CONSTANT; }
 white   { yylval.val = COLOR_WHITE;   return COLOR_CONSTANT; }
 
-true                     { yylval.val = 1; return B_TRUE; }
-false                    { yylval.val = 0; return B_FALSE; }
-maybe(\({DIGIT}+\))?     { yylval.val = 123;/*FIXME*/ return B_MAYBE; }
+true    { yylval.expression_val.bool = 1; return B_TRUE; }
+false   { yylval.expression_val.bool = 0; return B_FALSE; }
+maybe   { return B_MAYBE; }
 
 
 '.' { yylval.car = yytext[1]; return MAP_TILE; }
@@ -78,7 +87,7 @@ maybe(\({DIGIT}+\))?     { yylval.val = 123;/*FIXME*/ return B_MAYBE; }
     return STRING;
 }
 
-{IDENTIFIER}             { yylval.str = strdup(yytext); return IDENTIFIER; }
+{IDENTIFIER}                    { yylval.str = strdup(yytext); return IDENTIFIER; }
 {IDENTIFIER}(\.{IDENTIFIER})+   { return COMPOUND_IDENTIFIER; }
 
-.                        { return yytext[0]; }
+.                               { return yytext[0]; }
