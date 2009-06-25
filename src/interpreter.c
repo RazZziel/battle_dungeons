@@ -223,7 +223,7 @@ expression_val_t eval_bin(expression_t *exp)
 
     switch( exp->code )
     {
-    case EXPR_EQUALS:
+    case EXPR_EQ:
         ret.code = EXPR_BOOL;
         if (expr1.code == expr2.code)
         {

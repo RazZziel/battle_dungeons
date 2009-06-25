@@ -51,8 +51,8 @@ aggressive  { return AGGRESSIVE; }
 \/=     { return EQ_DIV; }
 ==      { return EQ; }
 !=      { return NE; }
-<       { return LT; }
-<=      { return LE; }
+\<       { return LT; }
+\<=      { return LE; }
 >       { return GT; }
 >=      { return GE; }
 or      { return OR; }

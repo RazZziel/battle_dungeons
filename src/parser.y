@@ -48,17 +48,18 @@ grid_node_t default_grid_node = { ' ', 20, FALSE, /*TRUE*/FALSE };
     statement_t*       statement;
 }
 
-%expect 35
-%type <val>             color_id entity_type
-%type <expression_val>  expression exp_int exp_bool exp_str exp_list bool_maybe lvalue exp_item
+%expect 1
+%type <val>                 color_id entity_type exp_int exp_bool
+%type <expression_val>      expression expr2 expr3 expr4 exp_bool_maybe lvalue
 %type <expression_val_list> expression_seq
-%type <statement>       statement stm_assignment function_call
+%type <statement>           statement stm_assignment function_call
 
-%token <expression_val> INTEGER B_TRUE B_FALSE B_MAYBE STRING
-%token <str> IDENTIFIER
+%token <val> INTEGER B_TRUE B_FALSE
+%token <str> IDENTIFIER STRING
+%token <expression_val> B_MAYBE
+
 %token COMPOUND_IDENTIFIER
 %token MAP_TILE COLOR_CONSTANT
-
 %token MAP WITH MATERIAL ENTITY ACTION
 %token TILE COLOR SOLID VISIBLE NAME HP MP RANGE_SIGHT AGGRESSIVE
 %token PC NPC OBJECT
@@ -389,58 +390,47 @@ color_id:
 	;
 
 
+/*
+ * Expressions
+ */
+
 
 expression:
-  expr2 { $$ = $1; } 
-| expr2 EQ expr2 { $$ = new_expr_bin( $1, $3, EXPR_EQ ); }
-| expr2 NE expr2 { $$ = new_expr_bin( $1, $3, EXPR_NE ); }
-| expr2 LT expr2 { $$ = new_expr_bin( $1, $3, EXPR_LT ); }
-| expr2 LE expr2 { $$ = new_expr_bin( $1, $3, EXPR_LE ); }
-| expr2 GT expr2 { $$ = new_expr_bin( $1, $3, EXPR_GT ); }
-| expr2 GE expr2 { $$ = new_expr_bin( $1, $3, EXPR_GE ); }
-;
+	  expr2               { $$ = $1; } 
+	| expr2   EQ   expr2  { $$ = new_expr_bin( $1, $3, EXPR_EQ ); }
+	| expr2   NE   expr2  { $$ = new_expr_bin( $1, $3, EXPR_NE ); }
+	| expr2   LT   expr2  { $$ = new_expr_bin( $1, $3, EXPR_LT ); }
+	| expr2   LE   expr2  { $$ = new_expr_bin( $1, $3, EXPR_LE ); }
+	| expr2   GT   expr2  { $$ = new_expr_bin( $1, $3, EXPR_GT ); }
+	| expr2   GE   expr2  { $$ = new_expr_bin( $1, $3, EXPR_GE ); }
+	| expr2   OR   expr2  { $$ = new_expr_bin( $1, $3, EXPR_BOOL_TRUE ); }
+	| expr2   AND  expr2  { $$ = new_expr_bin( $1, $3, EXPR_BOOL_TRUE ); }
+	;
 
 expr2:
-  expr3 { $$ == $1; }
-| expr2 PLUS expr3  { $$ = new_expr_bin( $1, $3, EXPR_ADD ); }
-| expr2 MINUS expr3 { $$ = new_expr_bin( $1, $3, EXPR_SUB ); }
-;
+	  expr3               { $$ == $1; }
+	| expr2   '+'  expr3  { $$ = new_expr_bin( $1, $3, EXPR_ADD ); }
+	| expr2   '-'  expr3  { $$ = new_expr_bin( $1, $3, EXPR_SUB ); }
+	;
 
 expr3:
-  expr4 { $$ = $1; }
-| expr3 MULT expr4   { $$ = new_expr_bin( $1, $3, EXPR_MUL ); }
-| expr3 DIVIDE expr4 { $$ = new_expr_bin( $1, $3, EXPR_DIV ); }
-;
+	  expr4               { $$ = $1; }
+	| expr3   '*'  expr4  { $$ = new_expr_bin( $1, $3, EXPR_MUL ); }
+	| expr3   '/'  expr4  { $$ = new_expr_bin( $1, $3, EXPR_DIV ); }
+	;
 
 expr4:
-  NOT expr4             { $$ = new_expr_uni( $2, EXPR_BOOL_NOT ); }
-| '(' expression ')'    { $$ = $2; }
-| NUMBER                { $$ = new_expr_simpl( $1, EXPR_INT ); }
-| STRING                { $$ = new_expr_simpl( $1, EXPR_STR ); }
-;
-/*
-expression:
-	  IDENTIFIER                      { $$ = new_expr_simpl( $1, EXPR_VAR ); }
-//	| COMPOUND_IDENTIFIER             { $$ = new_expr_simpl( $1, EXPR_VAR ); }
-	| exp_bool                        { $$ = new_expr_simpl( $1, EXPR_BOOL ); }
-	| exp_int                         { $$ = new_expr_simpl( $1, EXPR_INT ); }
-	| exp_str                         { $$ = new_expr_simpl( $1, EXPR_STR ); }
-	| exp_list                        { $$ = new_expr_simpl( $1, EXPR_LIST ); }
-	| exp_item                        { $$ = new_expr_simpl( $1, EXPR_INV ); }
-	| '(' expression ')'              { $$ = $2; }
-	| MAP_TILE                        { $$ = NULL; }
+	  NOT expr4             { $$ = new_expr_uni( $2, EXPR_BOOL_NOT ); }
+	| '(' expression ')'    { $$ = $2; }
+	| exp_int               { $$ = new_expr_simpl( $1, EXPR_INT ); }
+	| STRING                { $$ = new_expr_simpl( $1, EXPR_STR ); }
+        | exp_bool              { $$ = new_expr_simpl( $1, EXPR_BOOL ); }
+	| exp_bool_maybe        { $$ = new_expr_simpl( $1, EXPR_BOOL_MAYBE ); }
+        | '(' expression_seq ')' { $$ = new_expr_simpl( $2, EXPR_LIST ); }
 	;
-exp_bool:
-	  B_TRUE                           { $$ = new_expr_simpl( $1, EXPR_BOOL ); }
-	| B_FALSE                          { $$ = new_expr_simpl( $1, EXPR_BOOL ); }
-	| bool_maybe                       { $$ = new_expr_simpl( $1, EXPR_BOOL_MAYBE ); }
-	| NOT exp_bool                     { $$ = new_expr_uni( $2, EXPR_BOOL_NOT ); }
-	| exp_bool    OR       exp_bool    { $$ = new_expr_bin( $1, $3, EXPR_BOOL_TRUE ); }
-	| exp_bool    AND      exp_bool    { $$ = new_expr_bin( $1, $3, EXPR_BOOL_TRUE ); }
-        | expression  EQUALS   expression  {  }
-        | expression  NEQUALS  expression  {  }
-	;
-bool_maybe:
+exp_int: INTEGER;
+exp_bool: B_TRUE | B_FALSE;
+exp_bool_maybe:
 	B_MAYBE
 	{
             expression_val_t val;
@@ -451,35 +441,26 @@ bool_maybe:
 	{
             expression_val_t val;
             if (($3 < 0) || ($3 > 100))
-                yyerror("probability values must be between 0 and 100");
+                yyerror( "probability values must be between 0 and 100" );
             val.int_val = $3;
             $$ = val;
 	}
 	;
-
-exp_int: INTEGER                           { $$ = new_expr_simpl( $1, EXPR_INT ); }
-	| exp_int     '+'      exp_int     { $$ = new_expr_bin( $1, $3, EXPR_ADD ); }
-	| exp_int     '-'      exp_int     { $$ = new_expr_bin( $1, $3, EXPR_SUB ); }
-	| exp_int     '*'      exp_int     { $$ = new_expr_bin( $1, $3, EXPR_MUL ); }
-	| exp_int     '/'      exp_int     { $$ = new_expr_bin( $1, $3, EXPR_DIV ); }
-	;
-exp_str: STRING                            { $$ = new_expr_simpl( $1, EXPR_STR ); }
-	| exp_str     '+'      exp_str     { $$ = new_expr_bin( $1, $3, EXPR_ADD ); }
-	| exp_str     '*'      exp_int     { $$ = new_expr_bin( $1, $3, EXPR_MUL ); }
-	;
-exp_list:
-	  '(' expression_seq ')'           { $$ = new_expr_simpl( $2, EXPR_LIST ); }
-	| exp_list    '+'      exp_list    { $$ = new_expr_bin( $1, $3, EXPR_ADD ); }
-	;
 expression_seq:
-	                                   { $$ = new_expr_list( NULL ); }
-	| expression                       { $$ = new_expr_list( $1 ); }
-	| expression ',' expression_seq    { $$ = add_expr_list( NULL, $1 ); }
+	                                  { $$ = new_expr_list( NULL ); }
+	| expression                      { $$ = new_expr_list( $1 ); }
+	| expression ',' expression_seq   { $$ = add_expr_list( NULL, $1 ); }
 	;
-exp_item: INTEGER '*' IDENTIFIER;
 
 
-statement: stm_assignment | function_call;
+/*
+ * Statements
+ */
+
+
+statement:
+	  stm_assignment
+	| function_call;
 stm_assignment:
 	  lvalue  '='     expression  { $$ = new_stm_bin( $1, $3 ); }
 	| lvalue  EQ_ADD  expression  { $$ = new_stm_assig( $1, new_expr_bin( $1, $3, EXPR_ADD ) ); }
@@ -488,10 +469,10 @@ stm_assignment:
 	| lvalue  EQ_DIV  expression  { $$ = new_stm_assig( $1, new_expr_bin( $1, $3, EXPR_DIV ) ); }
 	;
 
-lvalue:   IDENTIFIER           { $$ = $<expression_val>1; }
+lvalue:
+          IDENTIFIER           { $$ = $<expression_val>1; }
 	| COMPOUND_IDENTIFIER  { $$ = $<expression_val>1; }
 	;
-*/
 
 
 %%
