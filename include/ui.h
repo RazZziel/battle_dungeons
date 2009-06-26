@@ -1,7 +1,7 @@
 #ifndef WINDOWS_H
 #define WINDOWS_H
 
-#include <ncurses.h>
+#include "global.h"
 
 extern WINDOW *game_win;
 

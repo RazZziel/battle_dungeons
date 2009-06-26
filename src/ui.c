@@ -1,7 +1,5 @@
-#include <ncurses.h>
-#include <stdarg.h>
-#include "battle.h"
-#include "windows.h"
+#include "engine.h"
+#include "ui.h"
 
 extern game_engine_t game;
 

@@ -1,10 +1,7 @@
-#include <ncurses.h>
-#include <unistd.h>
-#include <string.h> // strlen
-
-#include "battle.h"
-#include "windows.h"
+#include "global.h"
 #include "menus.h"
+#include "engine.h"
+#include "ui.h"
 
 extern game_engine_t game;
 

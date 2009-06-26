@@ -1,10 +1,10 @@
 #ifndef COMBAT_H
 #define COMBAT_H
 
-#include "character.h"
+#include "global.h"
 
 #define modifier(score) (score/2)-5
 
-void new_combat();
+void new_game();
 
 #endif /* COMBAT_H */

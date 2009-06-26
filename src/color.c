@@ -1,4 +1,4 @@
-#include <ncurses.h>
+#include "global.h"
 #include "color.h"
  
 int init_colors()

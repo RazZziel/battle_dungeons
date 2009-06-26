@@ -1,13 +1,9 @@
-#ifndef CHARACTER_H
-#define CHARACTER_H
-
-#include <string.h>
+#include "global.h"
 
 //objetos
 //armas
 //coordenadas
 
-#include "character.h"
 //#include "files.h"
 
 //pj_t *jugador;
@@ -87,4 +83,3 @@ Begin
    cargar_bd( bd_clases, BD_clases_NOMBRE, 'clases' );
 }
 */
-#endif /* CHARACTER_H */

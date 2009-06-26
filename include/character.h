@@ -1,7 +1,7 @@
 #ifndef CHARACTER_H
 #define CHARACTER_H
 
-#include <stdbool.h>
+#include "global.h"
 
 /* Actions */
 
@@ -37,7 +37,8 @@ typedef enum {head, body, arms, hands, legs, feet, right_hand, left_hand}
     places_t;
 
 typedef struct {
-    int str, dex;
+    int str;
+    int dex;
 } weapon_t;
 
 typedef struct {

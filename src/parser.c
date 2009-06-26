@@ -1,8 +1,5 @@
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include "scripting.h"
+#include "global.h"
+#include "parser.h"
 #include "lex.yy.h"
 
 #define INITIAL_CACHE_SIZE 2

@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include "global.h"
 
 int dices (int quantity, int faces, int modifiers)
 {

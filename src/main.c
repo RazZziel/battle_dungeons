@@ -12,28 +12,18 @@
  * Práctica de Com : 01.04.2009                                          *
  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <ncurses.h>
-#include <assert.h>
-#include <time.h>
-#include <unistd.h>  // usleep
 
-#ifdef HAVE_POPT /*TODO*/
-# include <popt.h>
-#endif
-
-#include "menus.h"
-#include "windows.h"
+#include "global.h"
 #include "color.h"
-#include "battle.h"
-#include "errors.h"
+#include "engine.h"
+#include "parser.h"
+#include "ui.h"
+#include "menus.h"
 #include "combat.h"
 #include "story.h"
-#include "scripting.h"
-#include "global.h"
 
-#define DEBUG_PARSER_
+#define DEBUG_PARSER
+
 
 void intro();
 void init(int argc, const char **argv);
@@ -41,6 +31,7 @@ void quit();
 void main_menu();
 
 game_engine_t game;
+
 
 void intro()
 {
@@ -82,6 +73,9 @@ void intro()
 
 void init(int argc, const char **argv)
 {
+    /* Change directory so we can always find data files */
+    chdir( dirname( (char*) argv[0] ) );
+
     /* command line options parsing */
 #ifdef HAVE_POPT
     bool * argLol = FALSE;
@@ -155,7 +149,7 @@ void main_menu()
         switch( option )
         {
         case 1:
-            new_combat(game);
+            new_game();
             break;
         case 2:
             story_mode();
@@ -186,7 +180,7 @@ int main(int argc, const char *argv[])
     intro();
     main_menu();
 #else
-    new_combat(game);
+    new_game();
 #endif
 
     return 0;

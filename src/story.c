@@ -1,5 +1,4 @@
-#include <ncurses.h>
-#include <unistd.h>
+#include "global.h"
 
 void
 story_mode() {

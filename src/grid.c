@@ -1,14 +1,10 @@
-#include <ncurses.h>
-#include <math.h>
-#include <stdlib.h>
-
-#include "grid.h"
-#include "windows.h"
-#include "color.h"
 #include "global.h"
-#include "battle.h"
+#include "grid.h"
+#include "engine.h"
+
 
 extern game_engine_t game;
+
 
 static inline int center_x(grid_t *grid, int x)
 {

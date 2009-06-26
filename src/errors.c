@@ -1,11 +1,4 @@
-/*
- * Control de mensajes de error
- */
-
-#include <stdlib.h>
-#include <stdarg.h>
-#include <ncurses.h>
-
+#include "global.h"
 #include "errors.h"
 
 void die(const char *fmt, ...)

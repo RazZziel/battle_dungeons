@@ -1,12 +1,8 @@
 #ifndef BATTLE_H
 #define BATTLE_H
 
-#include <ncurses.h>
-#include <stdbool.h>
+#include "global.h"
 #include "grid.h"
-
-#define AUTHOR "RazZziel"
-#define VERSION "0.1.0"
 
 
 typedef struct {

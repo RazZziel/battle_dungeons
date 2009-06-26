@@ -1,12 +1,12 @@
+%code requires {
+#include "interpreter.h"
+}
+
 %{
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
-#include "battle.h"
-#include "grid.h"
+#include "global.h"
+#include "parser.h"
+#include "engine.h"
 #include "errors.h"
-#include "scripting.h"
 
 #define YYERROR_VERBOSE
 #define ASSIGN_CHAR_PROPERTY(_field_,_value_) \
@@ -16,7 +16,7 @@
         _destination_->data.entity._field_ =         \
             _source_->data.entity._field_;
 
-extern char* yytext;
+extern char *yytext;
 extern int yyget_lineno();
 extern int yylex();
 extern int yyerror(const char *fmt, ...);
@@ -36,30 +36,34 @@ void copy_character_t(definition_t *destination, definition_t *source);
 int mapflag=0;
 char *yyfilename=NULL;
 grid_node_t default_grid_node = { ' ', 20, FALSE, /*TRUE*/FALSE };
+
+//#define YYSTYPE expression_type_t
 %}
 
 
 %union {
-    int                val;
-    char*              str;
-    char               car;
-    expression_val_t*  expression_val;
-    expression_val_t** expression_val_list;
-    statement_t*       statement;
+    int            _int;
+    char          *_str;
+    char           _car;
+    expression_t  *expression_val;
+    expression_t **expression_val_list;
+    statement_t   *statement;
 }
 
-%expect 1
-%type <val>                 color_id entity_type exp_int exp_bool
-%type <expression_val>      expression expr2 expr3 expr4 exp_bool_maybe lvalue
-%type <expression_val_list> expression_seq
-%type <statement>           statement stm_assignment function_call
 
-%token <val> INTEGER B_TRUE B_FALSE
-%token <str> IDENTIFIER STRING
+%type <_int>                color_id color_pair entity_type expr_int expr_bool expr_bool_maybe
+%type <expression_val>      expression expr2 expr3 expr4 lvalue
+%type <expression_val_list> expression_seq
+%type <statement>           statement stm_assignment
+
+%type <_str>                function_decl function_call
+
+%token <_int> INTEGER B_TRUE B_FALSE COLOR_CONSTANT
+%token <_str> IDENTIFIER STRING
 %token <expression_val> B_MAYBE
 
+%token <_car> MAP_TILE
 %token COMPOUND_IDENTIFIER
-%token MAP_TILE COLOR_CONSTANT
 %token MAP WITH MATERIAL ENTITY ACTION
 %token TILE COLOR SOLID VISIBLE NAME HP MP RANGE_SIGHT AGGRESSIVE
 %token PC NPC OBJECT
@@ -155,7 +159,7 @@ map_line: STRING
                                                  parser.str_cache_lines,
                                                  &parser.str_cache_size,
                                                  sizeof(*parser.str_cache) );
-            parser.str_cache[parser.str_cache_lines++] = $<str>1;
+            parser.str_cache[parser.str_cache_lines++] = $1;
 	}
 	;
 map_rules: map_rule | map_rule map_rules;
@@ -163,11 +167,11 @@ map_rule:
 	MAP_TILE
 	{
             memset( &parser.current_rule, 0, sizeof(parser.current_rule) );
-            parser.current_rule.name = $<car>1;
+            parser.current_rule.name = $1;
 	}
 	'=' map_tile_type
 	{
-            parser.current_rule.name = $<car>1;
+            parser.current_rule.name = $1;
             parser.rule_cache = check_cache_size( parser.rule_cache,
                                                   parser.rule_cache_lines,
                                                   &parser.rule_cache_size,
@@ -178,9 +182,9 @@ map_rule:
 map_tile_type:
 	MATERIAL IDENTIFIER
 	{
-            definition_t *definition = find_definition($<str>2, RULE_MATERIAL);
+            definition_t *definition = find_definition($2, RULE_MATERIAL);
             if ( !definition )
-                yyerror("undefined material '%s'", $<str>2);
+                yyerror("undefined material '%s'", $2);
 
             parser.current_rule.type = RULE_MATERIAL;
             memcpy( &parser.current_rule.data.material,
@@ -189,9 +193,9 @@ map_tile_type:
 	}
 	| ENTITY IDENTIFIER
 	{
-            definition_t *definition = find_definition($<str>2, RULE_ENTITY);
+            definition_t *definition = find_definition($2, RULE_ENTITY);
             if ( !definition )
-                yyerror("undefined entity '%s'", $<str>2);
+                yyerror("undefined entity '%s'", $2);
 
             parser.current_rule.type = RULE_ENTITY;
             memcpy( &parser.current_rule.data.entity,
@@ -200,10 +204,10 @@ map_tile_type:
 	}
 	| ACTION action_trigger function_call
 	{
-            definition_t *definition = find_definition($<str>3, RULE_ACTION);
+            definition_t *definition = find_definition($3, RULE_ACTION);
             if ( !definition )
             {
-                yyerror("undefined action '%s'", $<str>3);
+                yyerror("undefined action '%s'", $3);
             }
 
             parser.current_rule.type = RULE_ACTION;
@@ -213,7 +217,7 @@ map_tile_type:
 	}
 	;
 
-function_call: IDENTIFIER '(' expression_seq ')' { $$ = new_stm_simpl( $1, $3, STM_FCALL ); };
+function_call: IDENTIFIER '(' expression_seq ')';
 function_decl: IDENTIFIER '(' identifier_seq ')';
 
 identifier_seq: | IDENTIFIER ',' identifier_seq | IDENTIFIER;
@@ -222,11 +226,11 @@ identifier_seq: | IDENTIFIER ',' identifier_seq | IDENTIFIER;
 
 entity_definition: ENTITY entity_type IDENTIFIER
 	{
-            parser.current_definition.name = $<str>3;
+            parser.current_definition.name = $3;
             parser.current_definition.type = RULE_ENTITY;
 
-            parser.current_definition.data.entity.type = $<val>2;
-            switch( $<val>2 )
+            parser.current_definition.data.entity.type = $2;
+            switch( $2 )
             {
             case ENTITY_PC:
             case ENTITY_NPC:
@@ -238,7 +242,7 @@ entity_definition: ENTITY entity_type IDENTIFIER
                 memset(parser.current_definition.data.entity.data.object, 0, sizeof(object_t));
                 break;
             default:
-                yyerror( "Unknown entity type %d", $<val>2 );
+                yyerror( "Unknown entity type %d", $2 );
             }
 	}
 	entity_hierarchy '{' entity_content '}'
@@ -267,9 +271,9 @@ entity_hierarchy: | EXTENDS '(' superclass_list ')';
 superclass_list: superclass_id | superclass_list ',' superclass_id;
 superclass_id: IDENTIFIER
 	{
-            definition_t *definition = find_definition($<str>1, RULE_ENTITY);
+            definition_t *definition = find_definition($1, RULE_ENTITY);
             if ( !definition )
-                yyerror("undefined entity '%s'", $<str>1);
+                yyerror("undefined entity '%s'", $1);
 
             copy_entity_t( &parser.current_definition, definition );
 	}
@@ -279,25 +283,25 @@ superclass_id: IDENTIFIER
 entity_content: entity_line | entity_content entity_line;
 entity_line:
 	  TILE '=' MAP_TILE
-	{ parser.current_definition.data.entity.tile = $<car>3; }
+	{ parser.current_definition.data.entity.tile = $3; }
 	| NAME '=' STRING
-	{ parser.current_definition.data.entity.name = $<str>3; }
+	{ parser.current_definition.data.entity.name = $3; }
 	| COLOR '=' COLOR_CONSTANT /* color_pair */
-	{ parser.current_definition.data.entity.color = $<val>3; }
+	{ parser.current_definition.data.entity.color = $3; }
 
-	| HP   '='  exp_int   { ASSIGN_CHAR_PROPERTY(hp_max, $<val>3); }
-	| MP   '='  exp_int   { ASSIGN_CHAR_PROPERTY(mp_max, $<val>3); }
-	| STR  '='  exp_int   { ASSIGN_CHAR_PROPERTY(str, $<val>3); }
-	| CON  '='  exp_int   { ASSIGN_CHAR_PROPERTY(con, $<val>3); }
+	| HP   '='  expr_int   { ASSIGN_CHAR_PROPERTY(hp_max, $3); }
+	| MP   '='  expr_int   { ASSIGN_CHAR_PROPERTY(mp_max, $3); }
+	| STR  '='  expr_int   { ASSIGN_CHAR_PROPERTY(str, $3); }
+	| CON  '='  expr_int   { ASSIGN_CHAR_PROPERTY(con, $3); }
 
-	| RANGE_SIGHT  '=' exp_int     { ASSIGN_CHAR_PROPERTY(range_sight, $<val>3); }
-	| AGGRESSIVE   '=' exp_bool    { ASSIGN_CHAR_PROPERTY(aggressive, $<val>3); }
+	| RANGE_SIGHT  '=' expr_int     { ASSIGN_CHAR_PROPERTY(range_sight, $3); }
+	| AGGRESSIVE   '=' expr_bool    { ASSIGN_CHAR_PROPERTY(aggressive, $3); }
 	| IDENTIFIER   '=' expression
 	| ACTION action_trigger function_call
 	{
-            definition_t *definition = find_definition($<str>3, RULE_ACTION);
+            definition_t *definition = find_definition($3, RULE_ACTION);
             if ( !definition )
-                yyerror("undefined action '%s'", $<str>3);
+                yyerror("undefined action '%s'", $3);
 	}
 	;
 
@@ -305,7 +309,7 @@ entity_line:
 
 action_definition: ACTION function_decl
 	{
-            parser.current_definition.name = $<str>2;
+            parser.current_definition.name = $2;
             parser.current_definition.type = RULE_ACTION;
 	}
 	'{' action_content '}'
@@ -325,7 +329,7 @@ action_trigger: ON_TOUCH | ON_INTERACT;
 
 material_definition: MATERIAL IDENTIFIER
 	{
-            parser.current_definition.name = $<str>2;
+            parser.current_definition.name = $2;
             parser.current_definition.type = RULE_MATERIAL;
             parser.current_definition.data.material = default_grid_node;
 	}
@@ -340,13 +344,13 @@ material_definition: MATERIAL IDENTIFIER
 material_content: material_line | material_content material_line;
 material_line:
 	  TILE '=' MAP_TILE
-	{ parser.current_definition.data.material.tile = $<car>3; }
+	{ parser.current_definition.data.material.tile = $3; }
 	| COLOR '=' color_pair
-	{ parser.current_definition.data.material.color = $<val>3; }
-	| SOLID '=' exp_bool
-	{ parser.current_definition.data.material.solid = $<val>3; }
-	| VISIBLE '=' exp_bool
-	{ parser.current_definition.data.material.visible = $<val>3; }
+	{ parser.current_definition.data.material.color = $3; }
+	| SOLID '=' expr_bool
+	{ parser.current_definition.data.material.solid = $3; }
+	| VISIBLE '=' expr_bool
+	{ parser.current_definition.data.material.visible = $3; }
 	;
 color_pair:
 	/* Initialize pair of ncurses colors */
@@ -357,7 +361,7 @@ color_pair:
                 pair_id++;
             else
                 fprintf( stderr, "Too many color pairs\n" );
-            init_pair( pair_id, $<val>1, COLOR_BLACK );   
+            init_pair( pair_id, $1, COLOR_BLACK );   
 	}
 	| color_id ',' color_id
 	{
@@ -366,7 +370,7 @@ color_pair:
                 pair_id++;
             else
                 fprintf( stderr, "Too many color pairs\n" );
-            init_pair( pair_id, $<val>1, $<val>3 );   
+            init_pair( pair_id, $1, $3 );   
 	}
 	;
 color_id:
@@ -380,13 +384,13 @@ color_id:
                 color_id++;
             else
                 fprintf( stderr, "Too many colors\n" );
-            fprintf(stderr,">>(%d,%d,%d)=%d\n",$<val>2, $<val>4, $<val>6, color_id);
-            init_color( color_id, $<val>2, $<val>4, $<val>6 );
+            fprintf(stderr,">>(%d,%d,%d)=%d\n",$2, $4, $6, color_id);
+            init_color( color_id, $2, $4, $6 );
             $$ = color_id;
 #endif
 	}
 	| COLOR_CONSTANT
-	{ $$ = $<val>1; }
+	{ $$ = $1; }
 	;
 
 
@@ -403,12 +407,12 @@ expression:
 	| expr2   LE   expr2  { $$ = new_expr_bin( $1, $3, EXPR_LE ); }
 	| expr2   GT   expr2  { $$ = new_expr_bin( $1, $3, EXPR_GT ); }
 	| expr2   GE   expr2  { $$ = new_expr_bin( $1, $3, EXPR_GE ); }
-	| expr2   OR   expr2  { $$ = new_expr_bin( $1, $3, EXPR_BOOL_TRUE ); }
-	| expr2   AND  expr2  { $$ = new_expr_bin( $1, $3, EXPR_BOOL_TRUE ); }
+	| expr2   OR   expr2  { $$ = new_expr_bin( $1, $3, EXPR_BOOL ); }
+	| expr2   AND  expr2  { $$ = new_expr_bin( $1, $3, EXPR_BOOL ); }
 	;
 
 expr2:
-	  expr3               { $$ == $1; }
+	  expr3               { $$ = $1; }
 	| expr2   '+'  expr3  { $$ = new_expr_bin( $1, $3, EXPR_ADD ); }
 	| expr2   '-'  expr3  { $$ = new_expr_bin( $1, $3, EXPR_SUB ); }
 	;
@@ -420,36 +424,33 @@ expr3:
 	;
 
 expr4:
-	  NOT expr4             { $$ = new_expr_uni( $2, EXPR_BOOL_NOT ); }
-	| '(' expression ')'    { $$ = $2; }
-	| exp_int               { $$ = new_expr_simpl( $1, EXPR_INT ); }
-	| STRING                { $$ = new_expr_simpl( $1, EXPR_STR ); }
-        | exp_bool              { $$ = new_expr_simpl( $1, EXPR_BOOL ); }
-	| exp_bool_maybe        { $$ = new_expr_simpl( $1, EXPR_BOOL_MAYBE ); }
-        | '(' expression_seq ')' { $$ = new_expr_simpl( $2, EXPR_LIST ); }
+	  NOT expr4              { $$ = new_expr_uni( $2, EXPR_NOT ); }
+	| '(' expression ')'     { $$ = $2; }
+	| expr_int               { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_INT ); }
+	| STRING                 { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_STR ); }
+        | expr_bool              { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_BOOL ); }
+	| expr_bool_maybe        { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_BOOL_MAYBE ); }
+        //| function_call          { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_FCALL ); }
+        //| '(' expression_seq ')' { $$ = new_expr_simpl( (expression_type_t) $2, EXPR_LIST ); }
 	;
-exp_int: INTEGER;
-exp_bool: B_TRUE | B_FALSE;
-exp_bool_maybe:
+expr_int: INTEGER;
+expr_bool: B_TRUE | B_FALSE;
+expr_bool_maybe:
 	B_MAYBE
 	{
-            expression_val_t val;
-            val.int_val = 50;
-            $$ = val;
+            $$ = 50;
 	}
-	| B_MAYBE '(' INTEGER ')' // Turn INTEGER into exp_int and eval()?
+	| B_MAYBE '(' INTEGER ')' // Turn INTEGER into expr_int and eval()?
 	{
-            expression_val_t val;
             if (($3 < 0) || ($3 > 100))
                 yyerror( "probability values must be between 0 and 100" );
-            val.int_val = $3;
-            $$ = val;
+            $$ = $3;
 	}
 	;
 expression_seq:
-	                                  { $$ = new_expr_list( NULL ); }
-	| expression                      { $$ = new_expr_list( $1 ); }
-	| expression ',' expression_seq   { $$ = add_expr_list( NULL, $1 ); }
+	                                  //{ $$ = new_expr_list( NULL ); }
+	| expression                      //{ $$ = new_expr_list( $1 ); }
+	| expression ',' expression_seq   //{ $$ = add_expr_list( NULL, $1 ); }
 	;
 
 
@@ -462,7 +463,7 @@ statement:
 	  stm_assignment
 	| function_call;
 stm_assignment:
-	  lvalue  '='     expression  { $$ = new_stm_bin( $1, $3 ); }
+	  lvalue  '='     expression  { $$ = new_stm_assig( $1, $3 ); }
 	| lvalue  EQ_ADD  expression  { $$ = new_stm_assig( $1, new_expr_bin( $1, $3, EXPR_ADD ) ); }
 	| lvalue  EQ_SUB  expression  { $$ = new_stm_assig( $1, new_expr_bin( $1, $3, EXPR_SUB ) ); }
 	| lvalue  EQ_MUL  expression  { $$ = new_stm_assig( $1, new_expr_bin( $1, $3, EXPR_MUL ) ); }

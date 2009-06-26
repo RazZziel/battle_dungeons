@@ -1,25 +1,11 @@
-/*
- * ROFLOLOL
- */
-
-#include <stdlib.h>
-#include <ncurses.h>
-#include <unistd.h>
-#include <math.h>
-#include <string.h>
-#include <assert.h>
-
-#include "battle.h"
-#include "combat.h"
-#include "windows.h"
-#include "grid.h"
-#include "menus.h"
-#include "color.h"
-#include "character.h"
 #include "global.h"
-#include "scripting.h"
+#include "engine.h"
+#include "ui.h"
+#include "menus.h"
+
 
 extern game_engine_t game;
+
 
 void attack(entity_t *attacker, entity_t *victim)
 {
@@ -386,7 +372,7 @@ void configure_test_enemies()
     }
 }
 
-void new_combat()
+void new_game()
 {
     select_character();
     configure_test_enemies();

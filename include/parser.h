@@ -1,9 +1,9 @@
 #ifndef SCRIPTING_H
 #define SCRIPTING_H
 
-
+#include "global.h"
 #include "grid.h"
-#include "character.h"
+
 
 int parse_script(char *filename);
 

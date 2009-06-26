@@ -1,7 +1,7 @@
 #ifndef MENUS_H
 #define MENUS_H
 
-#include "grid.h"
+#include "global.h"
 
 void move_selection(WINDOW *window, int *option, int direction, int left, int right, int pair);
 int menu(WINDOW *menu_win, int menu_y, char **options, int color_pair);
