@@ -37,25 +37,23 @@ int mapflag=0;
 char *yyfilename=NULL;
 grid_node_t default_grid_node = { ' ', 20, FALSE, /*TRUE*/FALSE };
 
-//#define YYSTYPE expression_type_t
+//#define YYSTYPE ast_value_t
 %}
 
 
 %union {
-    int            _int;
-    char          *_str;
-    char           _car;
-    expression_t  *expression_val;
-    expression_t **expression_val_list;
-    statement_t   *statement;
+    int     _int;
+    char   *_str;
+    char    _car;
+    ast_t  *_ast;
+    ast_t **_ast_list;
 }
 
 
-%type <_int>                color_id color_pair entity_type expr_int expr_bool expr_bool_maybe
-%type <_str>                function_decl function_call
-%type <expression_val>      expression expr2 expr3 expr4 lvalue
-%type <expression_val_list> expression_seq
-%type <statement>           statement stm_assignment
+%type <_int>       color_id color_pair entity_type expr_int expr_bool expr_bool_maybe
+%type <_str>       function_decl function_call
+%type <_ast>       expression expr2 expr3 expr4 lvalue statement stm_assignment
+%type <_ast_list>  expression_seq
 
 %token <_int> INTEGER B_TRUE B_FALSE COLOR_CONSTANT
 %token <_str> IDENTIFIER COMPOUND_IDENTIFIER STRING
@@ -408,38 +406,38 @@ color_id:
 
 expression:
 	  expr2               { $$ = $1; } 
-	| expr2   EQ   expr2  { $$ = new_expr_bin( $1, $3, EXPR_EQ ); }
-	| expr2   NE   expr2  { $$ = new_expr_bin( $1, $3, EXPR_NE ); }
-	| expr2   LT   expr2  { $$ = new_expr_bin( $1, $3, EXPR_LT ); }
-	| expr2   LE   expr2  { $$ = new_expr_bin( $1, $3, EXPR_LE ); }
-	| expr2   GT   expr2  { $$ = new_expr_bin( $1, $3, EXPR_GT ); }
-	| expr2   GE   expr2  { $$ = new_expr_bin( $1, $3, EXPR_GE ); }
-	| expr2   OR   expr2  { $$ = new_expr_bin( $1, $3, EXPR_BOOL ); }
-	| expr2   AND  expr2  { $$ = new_expr_bin( $1, $3, EXPR_BOOL ); }
+	| expr2   EQ   expr2  { $$ = new_cons_bin( $1, $3, EXPR_EQ ); }
+	| expr2   NE   expr2  { $$ = new_cons_bin( $1, $3, EXPR_NE ); }
+	| expr2   LT   expr2  { $$ = new_cons_bin( $1, $3, EXPR_LT ); }
+	| expr2   LE   expr2  { $$ = new_cons_bin( $1, $3, EXPR_LE ); }
+	| expr2   GT   expr2  { $$ = new_cons_bin( $1, $3, EXPR_GT ); }
+	| expr2   GE   expr2  { $$ = new_cons_bin( $1, $3, EXPR_GE ); }
+	| expr2   OR   expr2  { $$ = new_cons_bin( $1, $3, EXPR_BOOL ); }
+	| expr2   AND  expr2  { $$ = new_cons_bin( $1, $3, EXPR_BOOL ); }
 	;
 
 expr2:
 	  expr3               { $$ = $1; }
-	| expr2   '+'  expr3  { $$ = new_expr_bin( $1, $3, EXPR_ADD ); }
-	| expr2   '-'  expr3  { $$ = new_expr_bin( $1, $3, EXPR_SUB ); }
+	| expr2   '+'  expr3  { $$ = new_cons_bin( $1, $3, EXPR_ADD ); }
+	| expr2   '-'  expr3  { $$ = new_cons_bin( $1, $3, EXPR_SUB ); }
 	;
 
 expr3:
 	  expr4               { $$ = $1; }
-	| expr3   '*'  expr4  { $$ = new_expr_bin( $1, $3, EXPR_MUL ); }
-	| expr3   '/'  expr4  { $$ = new_expr_bin( $1, $3, EXPR_DIV ); }
+	| expr3   '*'  expr4  { $$ = new_cons_bin( $1, $3, EXPR_MUL ); }
+	| expr3   '/'  expr4  { $$ = new_cons_bin( $1, $3, EXPR_DIV ); }
 	;
 
 expr4:
-	  NOT expr4              { $$ = new_expr_uni( $2, EXPR_NOT ); }
+	  NOT expr4              { $$ = new_cons_uni( $2, EXPR_NOT ); }
 	| '(' expression ')'     { $$ = $2; }
-	| expr_int               { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_INT ); }
-	| IDENTIFIER             { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_VAR ); }
-	| STRING                 { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_STR ); }
-        | expr_bool              { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_BOOL ); }
-	| expr_bool_maybe        { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_BOOL_MAYBE ); }
-        //| function_call          { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_FCALL ); }
-        //| '(' expression_seq ')' { $$ = new_expr_simpl( (expression_type_t) $2, EXPR_LIST ); }
+	| expr_int               { $$ = new_value( (ast_value_t) $1, EXPR_INT ); }
+	| IDENTIFIER             { $$ = new_value( (ast_value_t) $1, EXPR_VAR ); }
+	| STRING                 { $$ = new_value( (ast_value_t) $1, EXPR_STR ); }
+        | expr_bool              { $$ = new_value( (ast_value_t) $1, EXPR_BOOL ); }
+	| expr_bool_maybe        { $$ = new_value( (ast_value_t) $1, EXPR_BOOL_MAYBE ); }
+        //| function_call          { $$ = new_fcall( (ast_value_t) $1, EXPR_FCALL ); }
+        //| '(' expression_seq ')' { $$ = new_value( (ast_value_t) $2, EXPR_LIST ); }
 	;
 expr_int: INTEGER;
 expr_bool: B_TRUE | B_FALSE;
@@ -466,16 +464,16 @@ statement:
 	  stm_assignment
 	| function_call;
 stm_assignment:
-	  lvalue  '='     expression  { $$ = new_stm_assig( $1, $3 ); }
-	| lvalue  EQ_ADD  expression  { $$ = new_stm_assig( $1, new_expr_bin( $1, $3, EXPR_ADD ) ); }
-	| lvalue  EQ_SUB  expression  { $$ = new_stm_assig( $1, new_expr_bin( $1, $3, EXPR_SUB ) ); }
-	| lvalue  EQ_MUL  expression  { $$ = new_stm_assig( $1, new_expr_bin( $1, $3, EXPR_MUL ) ); }
-	| lvalue  EQ_DIV  expression  { $$ = new_stm_assig( $1, new_expr_bin( $1, $3, EXPR_DIV ) ); }
+	  lvalue  '='     expression  { $$ = new_assig( $1, $3 ); }
+	| lvalue  EQ_ADD  expression  { $$ = new_assig( $1, new_cons_bin( $1, $3, EXPR_ADD ) ); }
+	| lvalue  EQ_SUB  expression  { $$ = new_assig( $1, new_cons_bin( $1, $3, EXPR_SUB ) ); }
+	| lvalue  EQ_MUL  expression  { $$ = new_assig( $1, new_cons_bin( $1, $3, EXPR_MUL ) ); }
+	| lvalue  EQ_DIV  expression  { $$ = new_assig( $1, new_cons_bin( $1, $3, EXPR_DIV ) ); }
 	;
 
 lvalue:
-          IDENTIFIER           { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_VAR ); }
-	| COMPOUND_IDENTIFIER  { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_VAR ); }
+          IDENTIFIER           { $$ = new_value( (ast_value_t) $1, EXPR_VAR ); }
+	| COMPOUND_IDENTIFIER  { $$ = new_value( (ast_value_t) $1, EXPR_VAR ); }
 	;
 
 

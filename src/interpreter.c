@@ -4,16 +4,18 @@
 #include "ui.h"
 
 
-expression_simpl_t eval_simpl(expression_t *expr);
-expression_simpl_t eval_uni(expression_t *expr);
-expression_simpl_t eval_bin(expression_t *exp);
+ast_t *init_parent(ast_t *expr, ast_code_t code);
+expression_value_t eval_value(ast_t *ast);
+expression_value_t eval_uni(ast_t *ast);
+expression_value_t eval_bin(ast_t *exp);
+expression_value_t eval_stm(ast_t *ast);
 
 
 extern int yyerror(const char *fmt, ...);
-expression_simpl_t expr_null = { {0}, {0} };
+expression_value_t ast_null = { {EXPR_NONE}, {0} };
 
 
-char *code2str(expression_code_t code)
+char *code2str(ast_code_t code)
 {
     switch( code )
     {
@@ -43,105 +45,189 @@ char *code2str(expression_code_t code)
     }
 }
 
-expression_simpl_t eval(expression_t *expr)
+
+
+
+/*
+ * AST construction
+ */
+
+
+ast_t *init_parent(ast_t *ast,
+                   ast_code_t code)
 {
-    switch( expr->code | 0xf0000000 )
+    ast->code = code;
+    return ast;
+}
+
+ast_t *new_value(ast_value_t value,
+                 ast_code_t code)
+{
+    expression_value_t *ast = malloc(sizeof(*ast));
+    init_parent( (ast_t*) ast, code );
+    ast->val = value;
+    return (ast_t*) ast;
+}
+
+ast_t *new_fcall(char *name,
+                 ast_t *argv, int argc,
+                 ast_t *body)
+{
+    expression_fcall_t *ast = malloc(sizeof(*ast));
+    init_parent( (ast_t*) ast, EXPR_FCALL );
+    ast->argv = argv;
+    ast->argc = argc;
+    ast->body = body;
+    return (ast_t*) ast;
+}
+
+ast_t *new_cons_uni(ast_t *ast1,
+                    ast_code_t code)
+{
+    expression_uni_t *ast = malloc(sizeof(*ast));
+    init_parent( (ast_t*) ast, code );
+    ast->ast1 = ast1;
+    return (ast_t*) ast;
+}
+
+ast_t *new_cons_bin(ast_t *ast1,
+                    ast_t *ast2,
+                    ast_code_t code)
+{
+    expression_bin_t *ast = malloc(sizeof(*ast));
+    init_parent( (ast_t*) ast, code );
+    ast->ast1 = ast1;
+    ast->ast2 = ast2;
+    return (ast_t*) ast;
+}
+
+ast_t *new_assig(ast_t *lval, ast_t *rval)
+{
+    if (lval->code != EXPR_VAR)
     {
-    case EXPR_TYPE_SIMPL:
+        yyerror( "Invalid assignment, lvalue must be a variable, "
+                 "got %s (0x%X) instead\n",
+                 code2str(lval->code), lval->code & 0x00ffffff );
+    }
+
+    statement_assig_t *stm = malloc(sizeof(*stm));
+    init_parent( (ast_t*) stm, STM_ASSIG );
+    stm->lval = lval;
+    stm->rval = rval;
+    return (ast_t*) stm;
+}
+
+
+
+/*
+ * AST evaluation
+ */
+
+
+
+expression_value_t eval(ast_t *ast)
+{
+    switch( ast->code | 0xf0000000 )
+    {
+    case AST_TYPE_SIMPL:
         /* Basic types */
-        return eval_simpl( expr );
+        return eval_value( ast );
 
-    case EXPR_TYPE_UNI:
+    case AST_TYPE_UNI:
         /* Unary operators */
-        return eval_uni( expr );
+        return eval_uni( ast );
 
-    case EXPR_TYPE_BIN:
+    case AST_TYPE_BIN:
         /* Binary operators */
-        return eval_bin( expr );
+        return eval_bin( ast );
+
+    case AST_TYPE_STM:
+        /* Binary operators */
+        return eval_stm( ast );
 
     default:
-        die( "Invalid expression code %d\n", expr->code );
-        return expr_null;
+        die( "Invalid AST code %d\n", ast->code );
+        return ast_null;
     }
 }
 
-expression_simpl_t eval_simpl(expression_t *expr)
+expression_value_t eval_value(ast_t *ast)
 {
-    expression_simpl_t *expr_simpl = (expression_simpl_t*) expr;
-    expression_simpl_t  ret;
+    expression_value_t *ast_value = (expression_value_t*) ast;
+    expression_value_t  ret;
 
-    switch( expr->code )
+    switch( ast->code )
     {
     case EXPR_BOOL_MAYBE:
-        ret.expr.code = EXPR_BOOL;
-        ret.val._bool = ((rand() % 100) < expr_simpl->val._int);
+        init_parent( (ast_t*) &ret, EXPR_BOOL );
+        ret.val._bool = ((rand() % 100) < ast_value->val._int);
         break;
     case EXPR_BOOL:
     case EXPR_INT:
     case EXPR_STR:
     case EXPR_LIST:
-        ret.val._list = expr_simpl->val._list;
+        ret.val._list = ast_value->val._list;
         break;
     case EXPR_VAR:
         /* TODO */
-        ret.expr.code = EXPR_INT;
-        ret.val._int  = 0;
+        init_parent( (ast_t*) &ret, EXPR_INT );
+        ret.val._int = 0;
         break;
     default:
-        die( "Invalid expression code %d\n", expr->code );
+        die( "Invalid AST code %d\n", ast->code );
     }
 
     return ret;
 }
 
-expression_simpl_t eval_uni(expression_t *expr)
+expression_value_t eval_uni(ast_t *ast)
 {
-    expression_uni_t   *expr_uni = (expression_uni_t*) expr;
-    expression_simpl_t  expr1    = eval(expr_uni->expr1);
-    expression_simpl_t  ret;
+    expression_uni_t   *ast_uni = (expression_uni_t*) ast;
+    expression_value_t  ast1    = eval(ast_uni->ast1);
+    expression_value_t  ret;
 
-    switch( expr->code )
+    switch( ast->code )
     {
     case EXPR_NOT:
-        switch ( expr1.expr.code )
+        switch ( ast1.parent.code )
         {
         case EXPR_BOOL:
-            ret.expr.code = EXPR_BOOL;
-            ret.val._bool = ! expr1.val._bool;
+            init_parent( (ast_t*) &ret, EXPR_BOOL );
+            ret.val._bool = ! ast1.val._bool;
             break;
         default:
             die( "incompatible types\n" );
         }
     default:
-        die( "Invalid expression code %d\n", expr->code );
+        die( "Invalid AST code %d\n", ast->code );
     }
 
     return ret;
 }
 
-expression_simpl_t eval_bin(expression_t *exp)
+expression_value_t eval_bin(ast_t *ast)
 {
-    expression_bin_t   *expr_bin = (expression_bin_t*) exp;
-    expression_simpl_t  expr1    = eval(expr_bin->expr1);
-    expression_simpl_t  expr2    = eval(expr_bin->expr2);
-    expression_simpl_t  ret;
+    expression_bin_t   *ast_bin = (expression_bin_t*) ast;
+    expression_value_t  ast1     = eval(ast_bin->ast1);
+    expression_value_t  ast2     = eval(ast_bin->ast2);
+    expression_value_t  ret;
 
-    switch( exp->code )
+    switch( ast->code )
     {
     case EXPR_EQ:
-        ret.expr.code = EXPR_BOOL;
-        if (expr1.expr.code == expr2.expr.code)
+        init_parent( (ast_t*) &ret, EXPR_BOOL );
+        if (ast1.parent.code == ast2.parent.code)
         {
-            switch ( expr1.expr.code )
+            switch ( ast1.parent.code )
             {
             case EXPR_BOOL:
-                ret.val._bool = (expr1.val._bool == expr2.val._bool);
+                ret.val._bool = (ast1.val._bool == ast2.val._bool);
                 break;
             case EXPR_INT:
-                ret.val._bool = (expr1.val._int == expr2.val._int);
+                ret.val._bool = (ast1.val._int == ast2.val._int);
                 break;
             case EXPR_STR:
-                ret.val._bool = !strcmp(expr1.val._str, expr2.val._str);
+                ret.val._bool = !strcmp(ast1.val._str, ast2.val._str);
                 break;
             case EXPR_LIST:
                 ret.val._bool = 0; /* TODO */
@@ -160,11 +246,11 @@ expression_simpl_t eval_bin(expression_t *exp)
         break;
 
     case EXPR_OR:
-        ret.expr.code = EXPR_BOOL;
-        switch (expr1.expr.code | expr2.expr.code)
+        init_parent( (ast_t*) &ret, EXPR_BOOL );
+        switch (ast1.parent.code | ast2.parent.code)
         {
         case EXPR_BOOL:
-            ret.val._int = expr1.val._bool || expr2.val._bool;
+            ret.val._int = ast1.val._bool || ast2.val._bool;
             break;
         default:
             die( "incompatible types\n" );
@@ -172,11 +258,11 @@ expression_simpl_t eval_bin(expression_t *exp)
         break;
 
     case EXPR_AND:
-        ret.expr.code = EXPR_BOOL;
-        switch (expr1.expr.code | expr2.expr.code)
+        init_parent( (ast_t*) &ret, EXPR_BOOL );
+        switch (ast1.parent.code | ast2.parent.code)
         {
         case EXPR_BOOL:
-            ret.val._int = expr1.val._bool && expr2.val._bool;
+            ret.val._int = ast1.val._bool && ast2.val._bool;
             break;
         default:
             die( "incompatible types\n" );
@@ -184,16 +270,16 @@ expression_simpl_t eval_bin(expression_t *exp)
         break;
 
     case EXPR_ADD:
-        switch (expr1.expr.code | expr2.expr.code)
+        switch (ast1.parent.code | ast2.parent.code)
         {
         case EXPR_INT:
-            ret.expr.code = EXPR_INT;
-            ret.val._int  = expr1.val._int + expr2.val._int;
+            init_parent( (ast_t*) &ret, EXPR_INT );
+            ret.val._int  = ast1.val._int + ast2.val._int;
             break;
         case EXPR_STR:
-            ret.expr.code = EXPR_STR;
-            ret.val._str  = malloc(strlen(expr1.val._str) + strlen(expr2.val._str) + 1);
-            sprintf( ret.val._str, "%s%s", expr1.val._str, expr2.val._str );
+            init_parent( (ast_t*) &ret, EXPR_STR );
+            ret.val._str  = malloc(strlen(ast1.val._str) + strlen(ast2.val._str) + 1);
+            sprintf( ret.val._str, "%s%s", ast1.val._str, ast2.val._str );
             break;
         default:
             die( "incompatible types\n" );
@@ -201,11 +287,11 @@ expression_simpl_t eval_bin(expression_t *exp)
         break;
 
     case EXPR_SUB:
-        switch (expr1.expr.code | expr2.expr.code)
+        switch (ast1.parent.code | ast2.parent.code)
         {
         case EXPR_INT:
-            ret.expr.code = EXPR_INT;
-            ret.val._int  = expr1.val._int - expr2.val._int;
+            init_parent( (ast_t*) &ret, EXPR_INT );
+            ret.val._int  = ast1.val._int - ast2.val._int;
             break;
         default:
             die( "incompatible types\n" );
@@ -213,22 +299,22 @@ expression_simpl_t eval_bin(expression_t *exp)
         break;
 
     case EXPR_MUL:
-        switch (expr1.expr.code | expr2.expr.code)
+        switch (ast1.parent.code | ast2.parent.code)
         {
         case EXPR_INT:
-            ret.expr.code = EXPR_INT;
-            ret.val._int = expr1.val._int * expr2.val._int;
+            init_parent( (ast_t*) &ret, EXPR_INT );
+            ret.val._int = ast1.val._int * ast2.val._int;
             break;
         case EXPR_STR | EXPR_INT:
         {
-            char *str1  = ( expr1.expr.code == EXPR_STR
-                            ? expr1.val._str
-                            : expr2.val._str );
-            int   times = ( expr1.expr.code == EXPR_INT
-                            ? expr1.val._int
-                            : expr1.val._int );
+            char *str1  = ( ast1.parent.code == EXPR_STR
+                            ? ast1.val._str
+                            : ast2.val._str );
+            int   times = ( ast1.parent.code == EXPR_INT
+                            ? ast1.val._int
+                            : ast1.val._int );
             int i;
-            ret.expr.code = EXPR_STR;
+            init_parent( (ast_t*) &ret, EXPR_STR );
             ret.val._str = malloc((strlen(str1) * times) + 1);
             for (i=0; i<times; i++)
             {
@@ -243,140 +329,72 @@ expression_simpl_t eval_bin(expression_t *exp)
         break;
 
     case EXPR_DIV:
-        switch (expr1.expr.code | expr2.expr.code)
+        switch (ast1.parent.code | ast2.parent.code)
         {
         case EXPR_INT:
-            ret.expr.code = EXPR_INT;
-            ret.val._int  = expr1.val._int / expr2.val._int;
+            init_parent( (ast_t*) &ret, EXPR_INT );
+            ret.val._int = ast1.val._int / ast2.val._int;
             break;
         default:
             die( "incompatible types\n" );
         }
         break;
     default:
-        die( "Invalid expression code %d\n", exp->code );
+        die( "Invalid AST code %d\n", ast->code );
     }
 
     return ret;
 }
 
 
-void execute(statement_t *stm)
+expression_value_t eval_stm(ast_t *ast)
 {
-    if (!stm)
-    {
-        return;
-    }
+    expression_value_t ret = ast_null;
     
-    switch( stm->code )
+    switch( ast->code )
     {
     case STM_NOP:
         break;
 
     case STM_IF:
         {
-            statement_if_t *stm_if = (statement_if_t*)stm;
-            execute( eval(stm_if->condition).val._bool
-                     ? stm_if->statement_then
-                     : stm_if->statement_else );
+            statement_if_t *ast_if = (statement_if_t*) ast;
+            ret = eval_stm( eval(ast_if->condition).val._bool
+                            ? ast_if->statement_then
+                            : ast_if->statement_else );
         }
         break;
 
     case STM_WHILE:
         {
-            statement_while_t *stm_while = (statement_while_t*)stm;
-            while ( eval(stm_while->condition).val._bool )
-                execute( stm_while->statement_while );
+            statement_while_t *ast_while = (statement_while_t*) ast;
+            while ( eval(ast_while->condition).val._bool )
+                ret = eval_stm( ast_while->statement_while );
         }
         break;
 
     case STM_SAY:
         {
-            statement_print_t *stm_print = (statement_print_t*)stm;
-            message( stm_print->data );
+            statement_print_t *ast_print = (statement_print_t*) ast;
+            message( ast_print->data );
         }
         break;
 
     case STM_DEBUG:
         {
-            statement_print_t *stm_print = (statement_print_t*)stm;
-            die( stm_print->data );
+            statement_print_t *ast_print = (statement_print_t*) ast;
+            die( ast_print->data );
         }
         break;
 
     default:
-        die( "Invalid statement code %d\n", stm->code );
+        die( "Invalid AST code %d\n", ast->code );
     }
 
-    execute( stm->next );
+    if ( ast->next )
+        return eval_stm( ast->next );
+    else
+        return ret;
     /* Remember to use (-foptimize-sibling-calls|-O2|-O3|-Os)
        for tail-recursion optimization */
-}
-
-
-expression_t *new_expr(expression_t *expr,
-                       expression_code_t code)
-{
-    expr->code = code;
-    return expr;
-}
-
-expression_t *new_expr_simpl(expression_type_t value,
-                             expression_code_t code)
-{
-    expression_simpl_t *expr = malloc(sizeof(*expr));
-    new_expr( (expression_t*) expr, code );
-    expr->val = value;
-    return (expression_t*) expr;
-}
-
-expression_t *new_expr_fcall(fcall_t fcall,
-                             expression_code_t code)
-{
-    expression_fcall_t *expr = malloc(sizeof(*expr));
-    new_expr( (expression_t*) expr, code );
-    //expr->fcall = fcall;
-    return (expression_t*) expr;
-}
-
-expression_t *new_expr_uni(expression_t *expr1,
-                           expression_code_t code)
-{
-    expression_uni_t *expr = malloc(sizeof(*expr));
-    new_expr( (expression_t*) expr, code );
-    expr->expr1 = expr1;
-    return (expression_t*) expr;
-}
-
-expression_t *new_expr_bin(expression_t *expr1,
-                           expression_t *expr2,
-                           expression_code_t code)
-{
-    expression_bin_t *expr = malloc(sizeof(*expr));
-    new_expr( (expression_t*) expr, code );
-    expr->expr1 = expr1;
-    expr->expr2 = expr2;
-    return (expression_t*) expr;
-}
-
-statement_t *new_stm(statement_t *stm, statement_code_t code)
-{
-    stm->code = code;
-    return stm;
-}
-
-statement_t *new_stm_assig(expression_t *lval, expression_t *rval)
-{
-    if (lval->code != EXPR_VAR)
-    {
-        yyerror( "Invalid assignment, lvalue must be a variable, "
-                 "got %s (0x%X) instead\n",
-                 code2str(lval->code), lval->code & 0x00ffffff );
-    }
-
-    statement_assig_t *stm = malloc(sizeof(*stm));
-    new_stm( (statement_t*) stm, STM_ASSIG );
-    stm->lval = lval;
-    stm->rval = rval;
-    return (statement_t*) stm;
 }
