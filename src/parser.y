@@ -52,18 +52,16 @@ grid_node_t default_grid_node = { ' ', 20, FALSE, /*TRUE*/FALSE };
 
 
 %type <_int>                color_id color_pair entity_type expr_int expr_bool expr_bool_maybe
+%type <_str>                function_decl function_call
 %type <expression_val>      expression expr2 expr3 expr4 lvalue
 %type <expression_val_list> expression_seq
 %type <statement>           statement stm_assignment
 
-%type <_str>                function_decl function_call
-
 %token <_int> INTEGER B_TRUE B_FALSE COLOR_CONSTANT
-%token <_str> IDENTIFIER STRING
+%token <_str> IDENTIFIER COMPOUND_IDENTIFIER STRING
+%token <_car> MAP_TILE
 %token <expression_val> B_MAYBE
 
-%token <_car> MAP_TILE
-%token COMPOUND_IDENTIFIER
 %token MAP WITH MATERIAL ENTITY ACTION
 %token TILE COLOR SOLID VISIBLE NAME HP MP RANGE_SIGHT AGGRESSIVE
 %token PC NPC OBJECT
@@ -220,7 +218,16 @@ map_tile_type:
 function_call: IDENTIFIER '(' expression_seq ')';
 function_decl: IDENTIFIER '(' identifier_seq ')';
 
-identifier_seq: | IDENTIFIER ',' identifier_seq | IDENTIFIER;
+expression_seq:
+	                                  //{ $$ = new_expr_list( NULL ); }
+	| expression                      //{ $$ = new_expr_list( $1 ); }
+	| expression ',' expression_seq   //{ $$ = add_expr_list( NULL, $1 ); }
+	;
+identifier_seq:
+	                                  //{ $$ = new_expr_list( NULL ); }
+	| IDENTIFIER                      //{ $$ = new_expr_list( $1 ); }
+	| IDENTIFIER ',' identifier_seq   //{ $$ = add_expr_list( NULL, $1 ); }
+	;
 
 /* Entities */
 
@@ -427,6 +434,7 @@ expr4:
 	  NOT expr4              { $$ = new_expr_uni( $2, EXPR_NOT ); }
 	| '(' expression ')'     { $$ = $2; }
 	| expr_int               { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_INT ); }
+	| IDENTIFIER             { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_VAR ); }
 	| STRING                 { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_STR ); }
         | expr_bool              { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_BOOL ); }
 	| expr_bool_maybe        { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_BOOL_MAYBE ); }
@@ -447,11 +455,6 @@ expr_bool_maybe:
             $$ = $3;
 	}
 	;
-expression_seq:
-	                                  //{ $$ = new_expr_list( NULL ); }
-	| expression                      //{ $$ = new_expr_list( $1 ); }
-	| expression ',' expression_seq   //{ $$ = add_expr_list( NULL, $1 ); }
-	;
 
 
 /*
@@ -471,8 +474,8 @@ stm_assignment:
 	;
 
 lvalue:
-          IDENTIFIER           { $$ = $<expression_val>1; }
-	| COMPOUND_IDENTIFIER  { $$ = $<expression_val>1; }
+          IDENTIFIER           { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_VAR ); }
+	| COMPOUND_IDENTIFIER  { $$ = new_expr_simpl( (expression_type_t) $1, EXPR_VAR ); }
 	;
 
 

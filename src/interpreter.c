@@ -9,6 +9,7 @@ expression_simpl_t eval_uni(expression_t *expr);
 expression_simpl_t eval_bin(expression_t *exp);
 
 
+extern int yyerror(const char *fmt, ...);
 expression_simpl_t expr_null = { {0}, {0} };
 
 
@@ -313,14 +314,15 @@ void execute(statement_t *stm)
 }
 
 
-expression_t *new_expr(expression_t *expr, expression_code_t code)
+expression_t *new_expr(expression_t *expr,
+                       expression_code_t code)
 {
     expr->code = code;
     return expr;
 }
 
-expression_t *new_expr_simpl( expression_type_t value,
-                              expression_code_t code )
+expression_t *new_expr_simpl(expression_type_t value,
+                             expression_code_t code)
 {
     expression_simpl_t *expr = malloc(sizeof(*expr));
     new_expr( (expression_t*) expr, code );
@@ -337,8 +339,8 @@ expression_t *new_expr_fcall(fcall_t fcall,
     return (expression_t*) expr;
 }
 
-expression_t *new_expr_uni( expression_t *expr1,
-                            expression_code_t code )
+expression_t *new_expr_uni(expression_t *expr1,
+                           expression_code_t code)
 {
     expression_uni_t *expr = malloc(sizeof(*expr));
     new_expr( (expression_t*) expr, code );
@@ -346,9 +348,9 @@ expression_t *new_expr_uni( expression_t *expr1,
     return (expression_t*) expr;
 }
 
-expression_t *new_expr_bin( expression_t *expr1,
-                            expression_t *expr2,
-                            expression_code_t code )
+expression_t *new_expr_bin(expression_t *expr1,
+                           expression_t *expr2,
+                           expression_code_t code)
 {
     expression_bin_t *expr = malloc(sizeof(*expr));
     new_expr( (expression_t*) expr, code );
@@ -363,12 +365,13 @@ statement_t *new_stm(statement_t *stm, statement_code_t code)
     return stm;
 }
 
-statement_t *new_stm_assig( expression_t *lval, expression_t *rval )
+statement_t *new_stm_assig(expression_t *lval, expression_t *rval)
 {
     if (lval->code != EXPR_VAR)
     {
-        die( "Invalid assignment, lvalue must be a variable, got %s (0x%X) instead\n",
-             code2str(lval->code), lval->code & 0x00ffffff );
+        yyerror( "Invalid assignment, lvalue must be a variable, "
+                 "got %s (0x%X) instead\n",
+                 code2str(lval->code), lval->code & 0x00ffffff );
     }
 
     statement_assig_t *stm = malloc(sizeof(*stm));

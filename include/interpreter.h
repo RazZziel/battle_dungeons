@@ -13,6 +13,8 @@ enum {
 };
 
 typedef enum {
+    EXPR_NONE       = 0,
+
     /* Basic types */
     EXPR_BOOL       = 1<<0 | EXPR_TYPE_SIMPL,
     EXPR_BOOL_MAYBE = 1<<1 | EXPR_TYPE_SIMPL, // Special case, each eval() needs a rand()
