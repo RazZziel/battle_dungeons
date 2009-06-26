@@ -17,6 +17,12 @@ entity npc castle_guard extends(soldier,elf) {
         #action on_interact piss_off_soldier()
 }
 
+action test() {
+        "rofl"+"mao+"+" "
+        debug("rofl"+"mao+"+" ");
+        debug(1+1);
+}
+
 action piss_off_soldier() {
         say("I got this key I'm not giving you, how cruel am I?")
         pissed_off += 1

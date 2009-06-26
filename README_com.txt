@@ -65,6 +65,18 @@ Comentarios:
               implementado lo básico para obtener una prueba de
               concepto funcional.
 
+              Detalles de diseño del lenguaje:
+
+                Se trata de un sencillo lenguaje multiparadigma
+              con tipado dinámico. Todas las componentes del
+              lenguaje son una expresión, para simplificar el diseño
+              y maximizar la flexibilidad, y se puede emplear tanto
+              un diseño algorítmico funcional muy limitado como uno
+              imperativo. Aunque toda expresión tiene un tipo único,
+              su control se realiza únicamente en tiempo de ejecución,
+              para simplificar el intérprete y agilizar la tarea del
+              programador.
+
 
 Nota:
         Conscientes de que el hecho de que el código esté en inglés puede

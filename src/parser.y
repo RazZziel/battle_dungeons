@@ -316,6 +316,7 @@ action_definition: ACTION function_decl
 	{
             parser.current_definition.name = $2;
             parser.current_definition.type = RULE_ACTION;
+            printf("_%s_\n", $2);
 	}
 	'{' action_content '}'
 	{
@@ -327,7 +328,7 @@ action_definition: ACTION function_decl
 	}
 	;
 action_content: action_line | action_content action_line;
-action_line: statement;
+action_line: statement { printf("-->\n");eval($1); };
 action_trigger: ON_TOUCH | ON_INTERACT;
 
 /* Materials */

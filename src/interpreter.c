@@ -41,10 +41,9 @@ char *code2str(ast_code_t code)
     case EXPR_SUB: return "EXPR_SUB";
     case EXPR_MUL: return "EXPR_MUL";
     case EXPR_DIV: return "EXPR_DIV";
-    default: return "UNKNOWN";
+    default: return NULL;
     }
 }
-
 
 
 
@@ -56,6 +55,14 @@ char *code2str(ast_code_t code)
 ast_t *init_parent(ast_t *ast,
                    ast_code_t code)
 {
+    printf("______%p\n",ast);
+    print_trace();
+    printf("%s\n",code2str(code));
+    if ( code2str(code) == NULL )
+    {
+        die( "Invalid AST code" );
+    }
+
     ast->code = code;
     return ast;
 }
@@ -146,7 +153,7 @@ expression_value_t eval(ast_t *ast)
         return eval_stm( ast );
 
     default:
-        die( "Invalid AST code %d\n", ast->code );
+        die( "Invalid AST code %s\n", code2str(ast->code) );
         return ast_null;
     }
 }
@@ -174,7 +181,7 @@ expression_value_t eval_value(ast_t *ast)
         ret.val._int = 0;
         break;
     default:
-        die( "Invalid AST code %d\n", ast->code );
+        die( "Invalid AST code %s\n", code2str(ast->code) );
     }
 
     return ret;
@@ -199,7 +206,7 @@ expression_value_t eval_uni(ast_t *ast)
             die( "incompatible types\n" );
         }
     default:
-        die( "Invalid AST code %d\n", ast->code );
+        die( "Invalid AST code %s\n", code2str(ast->code) );
     }
 
     return ret;
@@ -340,7 +347,7 @@ expression_value_t eval_bin(ast_t *ast)
         }
         break;
     default:
-        die( "Invalid AST code %d\n", ast->code );
+        die( "Invalid AST code %s\n", code2str(ast->code) );
     }
 
     return ret;
@@ -388,7 +395,7 @@ expression_value_t eval_stm(ast_t *ast)
         break;
 
     default:
-        die( "Invalid AST code %d\n", ast->code );
+        die( "Invalid AST code %s\n", code2str(ast->code) );
     }
 
     if ( ast->next )
