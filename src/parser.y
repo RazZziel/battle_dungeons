@@ -1,12 +1,15 @@
+/*
 %code requires {
 #include "interpreter.h"
 }
+*/
 
 %{
 #include "global.h"
 #include "parser.h"
 #include "engine.h"
 #include "errors.h"
+#include "interpreter.h"
 
 #define YYERROR_VERBOSE
 #define ASSIGN_CHAR_PROPERTY(_field_,_value_) \
@@ -46,14 +49,12 @@ grid_node_t default_grid_node = { ' ', 20, FALSE, /*TRUE*/FALSE };
     char   *_str;
     char    _car;
     ast_t  *_ast;
-    ast_t **_ast_list;
 }
 
 
 %type <_int>       color_id color_pair entity_type expr_int expr_bool expr_bool_maybe
-%type <_str>       function_decl function_call
-%type <_ast>       expression expr2 expr3 expr4 lvalue statement stm_assignment
-%type <_ast_list>  expression_seq
+%type <_str>       function_decl 
+%type <_ast>       expression expression_seq expr2 expr3 expr4 function_call //lvalue statement stm_assignment
 
 %token <_int> INTEGER B_TRUE B_FALSE COLOR_CONSTANT
 %token <_str> IDENTIFIER COMPOUND_IDENTIFIER STRING
@@ -200,7 +201,7 @@ map_tile_type:
 	}
 	| ACTION action_trigger function_call
 	{
-            definition_t *definition = find_definition($3, RULE_ACTION);
+            definition_t *definition = find_definition(((expression_fcall_t*)$3)->name, RULE_ACTION);
             if ( !definition )
             {
                 yyerror("undefined action '%s'", $3);
@@ -213,18 +214,18 @@ map_tile_type:
 	}
 	;
 
-function_call: IDENTIFIER '(' expression_seq ')';
-function_decl: IDENTIFIER '(' identifier_seq ')';
+function_call: IDENTIFIER '(' expression_seq ')' { $$ = new_fcall($1, $3); }
+function_decl: IDENTIFIER '(' identifier_seq ')' { $$ = $1; }
 
 expression_seq:
-	                                  //{ $$ = new_expr_list( NULL ); }
-	| expression                      //{ $$ = new_expr_list( $1 ); }
-	| expression ',' expression_seq   //{ $$ = add_expr_list( NULL, $1 ); }
+	                                  { $$ = NULL; }
+	| expression                      { $$ = $1; }
+	| expression_seq ',' expression   { $$ = append_to_expr( $1, $3 ); }
 	;
 identifier_seq:
-	                                  //{ $$ = new_expr_list( NULL ); }
-	| IDENTIFIER                      //{ $$ = new_expr_list( $1 ); }
-	| IDENTIFIER ',' identifier_seq   //{ $$ = add_expr_list( NULL, $1 ); }
+	                                  //{ $$ = new_id_list( NULL ); }
+	| IDENTIFIER                      //{ $$ = new_id_list( $1 ); }
+	| identifier_seq ',' IDENTIFIER   //{ $$ = add_id_list( $1, $3 ); }
 	;
 
 /* Entities */
@@ -304,9 +305,10 @@ entity_line:
 	| IDENTIFIER   '=' expression
 	| ACTION action_trigger function_call
 	{
-            definition_t *definition = find_definition($3, RULE_ACTION);
+            definition_t *definition = find_definition(((expression_fcall_t*)$3)->name, RULE_ACTION);
             if ( !definition )
                 yyerror("undefined action '%s'", $3);
+            /* TODO: insert event in character structure */
 	}
 	;
 
@@ -328,7 +330,8 @@ action_definition: ACTION function_decl
 	}
 	;
 action_content: action_line | action_content action_line;
-action_line: statement { printf("-->\n");eval($1); };
+//action_line: statement { printf("-->\n");eval_debug($1); };
+action_line: expression { printf("-->");eval_debug($1); };
 action_trigger: ON_TOUCH | ON_INTERACT;
 
 /* Materials */
@@ -437,10 +440,13 @@ expr4:
 	| STRING                 { $$ = new_value( (ast_value_t) $1, EXPR_STR ); }
         | expr_bool              { $$ = new_value( (ast_value_t) $1, EXPR_BOOL ); }
 	| expr_bool_maybe        { $$ = new_value( (ast_value_t) $1, EXPR_BOOL_MAYBE ); }
-        //| function_call          { $$ = new_fcall( (ast_value_t) $1, EXPR_FCALL ); }
+        | function_call          { $$ = $1; }
         //| '(' expression_seq ')' { $$ = new_value( (ast_value_t) $2, EXPR_LIST ); }
 	;
-expr_int: INTEGER;
+expr_int:
+	  INTEGER      { $$ = $1; }
+	| '-' INTEGER  { $$ = -$2; }
+	;
 expr_bool: B_TRUE | B_FALSE;
 expr_bool_maybe:
 	B_MAYBE
@@ -460,7 +466,7 @@ expr_bool_maybe:
  * Statements
  */
 
-
+/*
 statement:
 	  stm_assignment
 	| function_call;
@@ -476,7 +482,7 @@ lvalue:
           IDENTIFIER           { $$ = new_value( (ast_value_t) $1, EXPR_VAR ); }
 	| COMPOUND_IDENTIFIER  { $$ = new_value( (ast_value_t) $1, EXPR_VAR ); }
 	;
-
+*/
 
 %%
 

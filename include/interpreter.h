@@ -70,16 +70,15 @@ typedef struct {
 } expression_value_t;
 
 typedef struct {
-    ast_t               parent;
-    char               *name;
-    expression_value_t  value;
+    ast_t  parent;
+    char  *name;
 } expression_var_t;
 
 typedef struct {
     ast_t  parent;
+    char  *name;
     ast_t *argv;
     int    argc;
-    ast_t *body;
 } expression_fcall_t;
 
 typedef struct {
@@ -122,15 +121,18 @@ typedef struct {
 } statement_print_t;
 
 
+char *code2str(ast_code_t code);
 
-expression_value_t eval(ast_t *expr);
+expression_value_t *eval(ast_t *expr);
+expression_value_t *eval_debug(ast_t *expr);
 
 ast_t *new_value(ast_value_t value, ast_code_t code);
 ast_t *new_cons_uni(ast_t *expr1, ast_code_t code);
 ast_t *new_cons_bin(ast_t *expr1, ast_t *expr2, ast_code_t code);
-ast_t *new_fcall(char *name, ast_t *argv, int argc, ast_t *body);
-
 ast_t *new_assig(ast_t *lval, ast_t *rval);
+ast_t *new_fcall(char *name, ast_t *argv);
+
+ast_t *append_to_expr( ast_t *list, ast_t *expr );
 
 
 

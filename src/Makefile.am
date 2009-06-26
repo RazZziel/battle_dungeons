@@ -10,6 +10,10 @@ AM_LDFLAGS = -rdynamic
 
 y.tab.c y.tab.h: parser.y
 	$(YACC) --report=all -y -d $< -o $@
+#	PIG DISGUSTING HACK (el bison de la fic no entiende de %code requires)
+	echo '#include "interpreter.h"' > __tmp__
+	cat y.tab.h >> __tmp__
+	mv __tmp__ y.tab.h
 
 lex.yy.c lex.yy.h: parser.l
 	$(LEX) --header-file=lex.yy.h $<

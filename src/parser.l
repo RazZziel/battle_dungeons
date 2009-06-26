@@ -78,11 +78,11 @@ maybe   { return B_MAYBE; }
 
 '.' { yylval._car = yytext[1]; return MAP_TILE; }
 
-[+-]?{DIGIT}+            {
+{DIGIT}+                 {
     sscanf(yytext, "%d", &yylval._int);
     return INTEGER;
             }
-\".*\"                   {
+\"[^\"]*\"               {
     yylval._str = malloc( yyleng-1 );
     memcpy( yylval._str, yytext+1, yyleng-2 );
     yylval._str[yyleng-2]='\0';
