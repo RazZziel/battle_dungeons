@@ -90,6 +90,5 @@ maybe   { return B_MAYBE; }
 }
 
 {IDENTIFIER}                    { yylval._str = strdup(yytext); return IDENTIFIER; }
-{IDENTIFIER}(\.{IDENTIFIER})+   { return COMPOUND_IDENTIFIER; }
 
 .                               { return yytext[0]; }

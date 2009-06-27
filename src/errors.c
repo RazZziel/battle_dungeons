@@ -38,7 +38,7 @@ void __vdie__(const char *file, const int line, const char *function, const char
 {
     endwin();
 
-    fprintf( stderr, "%s:%d[%s()]: error: ", file, line, function );
+    fprintf( stderr, "%s:%d [%s()]: error: ", file, line, function );
 
     vfprintf( stderr, fmt, argp );
 
@@ -46,6 +46,24 @@ void __vdie__(const char *file, const int line, const char *function, const char
     print_trace();
 #endif
 
+    fprintf( stderr, "\n" );
     fflush( stderr );
+
     exit( 1 );
 }
+
+void __debug__(const char *file, const int line, const char *function, const char *fmt, ...)
+{
+    va_list argp;
+    va_start(argp, fmt);
+
+    fprintf( stderr, "%s:%d [%s()]: debug: ", file, line, function );
+
+    vfprintf( stderr, fmt, argp );
+
+    fprintf( stderr, "\n" );
+    fflush( stderr );
+
+    va_end(argp);
+}
+

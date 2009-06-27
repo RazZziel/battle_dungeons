@@ -51,13 +51,16 @@ grid_node_t default_grid_node = { ' ', 20, FALSE, /*TRUE*/FALSE };
     ast_t  *_ast;
 }
 
+/*TODO: clear conflicts*/
+%expect 34
 
-%type <_int>       color_id color_pair entity_type expr_int expr_bool expr_bool_maybe
-%type <_str>       function_decl 
-%type <_ast>       expression expression_seq expr2 expr3 expr4 function_call //lvalue statement stm_assignment
+%type <_int>  color_id color_pair entity_type expr_int expr_bool expr_bool_maybe
+%type <_str>  function_decl 
+%type <_ast>  expression expr2 expr3 expr4 function_call assignment lvalue
+%type <_ast>  expression_seq action_content
 
 %token <_int> INTEGER B_TRUE B_FALSE COLOR_CONSTANT
-%token <_str> IDENTIFIER COMPOUND_IDENTIFIER STRING
+%token <_str> IDENTIFIER STRING
 %token <_car> MAP_TILE
 %token <expression_val> B_MAYBE
 
@@ -322,6 +325,8 @@ action_definition: ACTION function_decl
 	}
 	'{' action_content '}'
 	{
+            eval_debug($5);
+
             parser.definition_cache = check_cache_size( parser.definition_cache,
                                                         parser.definition_cache_lines,
                                                         &parser.definition_cache_size,
@@ -329,9 +334,10 @@ action_definition: ACTION function_decl
             parser.definition_cache[parser.definition_cache_lines++] = parser.current_definition;
 	}
 	;
-action_content: action_line | action_content action_line;
-//action_line: statement { printf("-->\n");eval_debug($1); };
-action_line: expression { printf("-->");eval_debug($1); };
+action_content:
+	  expression                 { $$ = $1; }
+	| action_content expression  { $$ = append_to_expr( $1, $2 ); }
+	;
 action_trigger: ON_TOUCH | ON_INTERACT;
 
 /* Materials */
@@ -398,8 +404,7 @@ color_id:
             $$ = color_id;
 #endif
 	}
-	| COLOR_CONSTANT
-	{ $$ = $1; }
+	| COLOR_CONSTANT { $$ = $1; }
 	;
 
 
@@ -441,7 +446,8 @@ expr4:
         | expr_bool              { $$ = new_value( (ast_value_t) $1, EXPR_BOOL ); }
 	| expr_bool_maybe        { $$ = new_value( (ast_value_t) $1, EXPR_BOOL_MAYBE ); }
         | function_call          { $$ = $1; }
-        //| '(' expression_seq ')' { $$ = new_value( (ast_value_t) $2, EXPR_LIST ); }
+        | assignment             { $$ = $1; }
+        | '[' expression_seq ']' { $$ = $2; }
 	;
 expr_int:
 	  INTEGER      { $$ = $1; }
@@ -461,16 +467,7 @@ expr_bool_maybe:
 	}
 	;
 
-
-/*
- * Statements
- */
-
-/*
-statement:
-	  stm_assignment
-	| function_call;
-stm_assignment:
+assignment:
 	  lvalue  '='     expression  { $$ = new_assig( $1, $3 ); }
 	| lvalue  EQ_ADD  expression  { $$ = new_assig( $1, new_cons_bin( $1, $3, EXPR_ADD ) ); }
 	| lvalue  EQ_SUB  expression  { $$ = new_assig( $1, new_cons_bin( $1, $3, EXPR_SUB ) ); }
@@ -478,11 +475,7 @@ stm_assignment:
 	| lvalue  EQ_DIV  expression  { $$ = new_assig( $1, new_cons_bin( $1, $3, EXPR_DIV ) ); }
 	;
 
-lvalue:
-          IDENTIFIER           { $$ = new_value( (ast_value_t) $1, EXPR_VAR ); }
-	| COMPOUND_IDENTIFIER  { $$ = new_value( (ast_value_t) $1, EXPR_VAR ); }
-	;
-*/
+lvalue: IDENTIFIER { $$ = new_value( (ast_value_t) $1, EXPR_VAR ); };
 
 %%
 
