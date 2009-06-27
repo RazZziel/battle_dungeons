@@ -3,6 +3,8 @@
 
 #include "global.h"
 #include "grid.h"
+#include "interpreter.h"
+#include "symtable.h"
 
 
 int parse_script(char *filename);
@@ -52,6 +54,10 @@ typedef struct {
         current_definition;
     int definition_cache_size,
         definition_cache_lines;
+
+    symbol_t *symbol_table;
+    int symbol_table_size,
+        symbol_table_lines;
 } game_parser_t;
 
 

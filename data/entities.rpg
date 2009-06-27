@@ -18,14 +18,15 @@ entity npc castle_guard extends(soldier,elf) {
 }
 
 action test() {
-        (2+3)*2+(-1)
-        lol = "lo"*4+"l"
-        lol
+        (2+3)*2+(-1);
+        lol = "lo"*4+"l";
+        lol;
 }
 
 action piss_off_soldier() {
         say("I got this key I'm not giving you, how cruel am I?")
-        pissed_off += 1
+        pissed_off = 0
+        //pissed_off += 1
 }
 
 entity pc player {

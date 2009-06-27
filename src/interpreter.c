@@ -1,6 +1,8 @@
 #include "global.h"
 #include "interpreter.h"
 #include "errors.h"
+#include "parser.h"
+#include "symtable.h"
 #include "ui.h"
 
 
@@ -12,6 +14,7 @@ expression_value_t *eval_stm(ast_t *ast);
 
 
 extern int yyerror(const char *fmt, ...);
+extern game_parser_t parser;
 expression_value_t ast_null = { {EXPR_NONE}, {0} };
 
 
@@ -57,6 +60,35 @@ char *code2str(ast_code_t code)
     }
 }
 
+/* Simbol table */
+ast_t* lookup_symbol(char *name)
+{
+    debug("(lookup) %s", name);
+    for (int i=0; i<parser.symbol_table_lines; i++)/*TODO:{b,h}search*/
+    {
+        if ( !strcmp(name, parser.symbol_table[i].name) )
+        {
+            return parser.symbol_table[i].ast;
+        }
+    }
+    return NULL;
+}
+
+void add_symbol(char *name, ast_t *ast)
+{
+    /* TODO:
+       - this is repeated multiple times in parser.y, refactor in symtable.c
+       - optimice assigning each variable a unique incremental number at
+         compile time so that symbol lookups are O(1)
+    */
+    debug("(add) %s", name);
+    parser.symbol_table = check_table_size( parser.symbol_table,
+                                            parser.symbol_table_lines,
+                                            &parser.symbol_table_size,
+                                            sizeof(*parser.symbol_table) );
+    symbol_t symbol = { name, ast };
+    parser.symbol_table[parser.symbol_table_lines++] = symbol;
+}
 
 
 /*
@@ -67,6 +99,7 @@ char *code2str(ast_code_t code)
 ast_t *init_parent(ast_t *ast,
                    ast_code_t code)
 {
+    debug("~~%s", code2str(code));
     if ( code2str(code) == NULL )
     {
         die( "Invalid AST code\n" );
@@ -198,7 +231,7 @@ expression_value_t *eval(ast_t *ast)
         die( "Invalid AST code %s\n", code2str(ast->code) );
     }
 
-#if 0
+#if 1
     printf("-->");
     switch ( ret->parent.code )
     {
@@ -245,13 +278,19 @@ expression_value_t *eval_value(ast_t *ast)
         ret->val = ast_value->val;
         break;
     case EXPR_VAR:
+    {
         /* TODO */
-        expression_var_t   *ast_var = (expression_var_t*) ast;
-        expression_value_t *value   = variable_lookup( ast_var->name );
+        expression_var_t *ast_var   = (expression_var_t*) ast;
+        ast_t            *ast_value = lookup_symbol( ast_var->name );
+        if (ast_value == NULL)
+        {
+            die( "Symbol %s not defined", ast_var->name );
+        }
+        expression_value_t *value = (expression_value_t*) ast_value;
         init_parent( (ast_t*) ret, value->parent.code );
         ret->val = value->val;
-        printf("F\n");
-        break;
+    }
+    break;
     case EXPR_FCALL:
         /*TODO: lookup function in symbol table, evaluate and return*/
         /*
@@ -445,7 +484,6 @@ expression_value_t *eval_bin(ast_t *ast)
 expression_value_t *eval_stm(ast_t *ast)
 {
     expression_value_t *ret = &ast_null;
-    
     switch( ast->code )
     {
     case STM_NOP:
@@ -453,7 +491,10 @@ expression_value_t *eval_stm(ast_t *ast)
 
     case STM_ASSIG:
     {
-        /* TODO */
+        statement_assig_t *ast_assig = (statement_assig_t*) ast;
+        expression_var_t  *ast_var   = (expression_var_t*) ast_assig->lval;
+        ast_t             *ast_value = (ast_t*) eval(ast_assig->rval);
+        add_symbol( ast_var->name, ast_value );
         break;
     }
 

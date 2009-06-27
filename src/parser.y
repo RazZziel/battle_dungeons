@@ -9,6 +9,7 @@
 #include "parser.h"
 #include "engine.h"
 #include "errors.h"
+#include "symtable.h"
 #include "interpreter.h"
 
 #define YYERROR_VERBOSE
@@ -27,8 +28,6 @@ extern int yyerror(const char *fmt, ...);
 extern game_engine_t game;
 extern game_parser_t parser;
 
-void *check_cache_size( void *cache, int cache_lines,
-                        int *cache_size, int element_size );
 definition_t *find_definition(char *name, item_type_t type);
 map_rule_t *find_rule(char name, item_type_t type);
 void assign_node(grid_node_t *node, char *line, int j, int i);
@@ -52,7 +51,7 @@ grid_node_t default_grid_node = { ' ', 20, FALSE, /*TRUE*/FALSE };
 }
 
 /*TODO: clear conflicts*/
-%expect 34
+%expect 32
 
 %type <_int>  color_id color_pair entity_type expr_int expr_bool expr_bool_maybe
 %type <_str>  function_decl 
@@ -155,7 +154,7 @@ map_content: map_line | map_content map_line;
 map_line: STRING
 	{
             /* Populate cache with map lines */
-            parser.str_cache = check_cache_size( parser.str_cache,
+            parser.str_cache = check_table_size( parser.str_cache,
                                                  parser.str_cache_lines,
                                                  &parser.str_cache_size,
                                                  sizeof(*parser.str_cache) );
@@ -172,7 +171,7 @@ map_rule:
 	'=' map_tile_type
 	{
             parser.current_rule.name = $1;
-            parser.rule_cache = check_cache_size( parser.rule_cache,
+            parser.rule_cache = check_table_size( parser.rule_cache,
                                                   parser.rule_cache_lines,
                                                   &parser.rule_cache_size,
                                                   sizeof(*parser.rule_cache) );
@@ -256,7 +255,7 @@ entity_definition: ENTITY entity_type IDENTIFIER
 	}
 	entity_hierarchy '{' entity_content '}'
 	{
-            parser.definition_cache = check_cache_size( parser.definition_cache,
+            parser.definition_cache = check_table_size( parser.definition_cache,
                                                         parser.definition_cache_lines,
                                                         &parser.definition_cache_size,
                                                         sizeof(*parser.definition_cache) );
@@ -327,7 +326,7 @@ action_definition: ACTION function_decl
 	{
             eval_debug($5);
 
-            parser.definition_cache = check_cache_size( parser.definition_cache,
+            parser.definition_cache = check_table_size( parser.definition_cache,
                                                         parser.definition_cache_lines,
                                                         &parser.definition_cache_size,
                                                         sizeof(*parser.definition_cache) );
@@ -335,8 +334,8 @@ action_definition: ACTION function_decl
 	}
 	;
 action_content:
-	  expression                 { $$ = $1; }
-	| action_content expression  { $$ = append_to_expr( $1, $2 ); }
+	  expression ';'                { $$ = $1; }
+	| action_content ';' expression  { $$ = append_to_expr( $1, $3 ); }
 	;
 action_trigger: ON_TOUCH | ON_INTERACT;
 
@@ -350,7 +349,7 @@ material_definition: MATERIAL IDENTIFIER
 	}
 	'{' material_content '}'
 	{
-            parser.definition_cache = check_cache_size( parser.definition_cache,
+            parser.definition_cache = check_table_size( parser.definition_cache,
                                                         parser.definition_cache_lines,
                                                         &parser.definition_cache_size,
                                                         sizeof(*parser.definition_cache) );
@@ -493,17 +492,6 @@ int yyerror(const char *fmt, ...)
 
     va_end(argp);
     return 0;
-}
-
-void *check_cache_size( void *cache, int cache_lines,
-                        int *cache_size, int element_size )
-{
-    if (cache_lines > (*cache_size)-1)
-    {
-        (*cache_size) *= 2;
-        cache = realloc(cache, (*cache_size) * element_size);
-    }
-    return cache;
 }
 
 void assign_node(grid_node_t *node, char *line, int j, int i)

@@ -1,8 +1,8 @@
 bin_PROGRAMS = battle_dungeons
 battle_dungeons_SOURCES = main.c ui.c menus.c ascii_art.c story.c \
                           errors.c color.c grid.c combat.c character.c dices.c \
-                          y.tab.c lex.yy.c inventory.c parser.c interpreter.c
-                          #enemies.c
+                          y.tab.c lex.yy.c inventory.c parser.c interpreter.c \
+                          symtable.c #enemies.c
 battle_dungeons_LDADD = -lncurses -lm -lfl -ly #-lpopt
 AM_CFLAGS = -Wall -Werror -std=c99 -fgnu89-inline -D_GNU_SOURCE -I../include $(all_includes)
 AM_LDFLAGS = -rdynamic
