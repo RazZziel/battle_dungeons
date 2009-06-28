@@ -22,7 +22,7 @@
 #include "combat.h"
 #include "story.h"
 
-#define DEBUG_PARSER
+#define DEBUG_PARSER_
 
 
 void intro();

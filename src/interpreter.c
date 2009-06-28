@@ -7,6 +7,7 @@
 
 
 ast_t *init_parent(ast_t *expr, ast_code_t code);
+expression_value_t *eval_expr(ast_t *ast);
 expression_value_t *eval_value(ast_t *ast);
 expression_value_t *eval_uni(ast_t *ast);
 expression_value_t *eval_bin(ast_t *exp);
@@ -81,6 +82,19 @@ void add_symbol(char *name, ast_t *ast)
        - optimice assigning each variable a unique incremental number at
          compile time so that symbol lookups are O(1)
     */
+
+    /*TODO: copypaste sucks*/
+    for (int i=0; i<parser.symbol_table_lines; i++)/*TODO:{b,h}search*/
+    {
+        if ( !strcmp(name, parser.symbol_table[i].name) )
+        {
+            debug("(update) %s", name);
+            free(parser.symbol_table[i].ast);
+            parser.symbol_table[i].ast = ast;
+            return;
+        }
+    }
+
     debug("(add) %s", name);
     parser.symbol_table = check_table_size( parser.symbol_table,
                                             parser.symbol_table_lines,
@@ -99,7 +113,7 @@ void add_symbol(char *name, ast_t *ast)
 ast_t *init_parent(ast_t *ast,
                    ast_code_t code)
 {
-    debug("~~%s", code2str(code));
+    //printf("(%s)\n",code2str(code));
     if ( code2str(code) == NULL )
     {
         die( "Invalid AST code\n" );
@@ -161,6 +175,8 @@ ast_t *new_assig(ast_t *lval, ast_t *rval)
              code2str(lval->code), lval->code & 0x00ffffff );
     }
 
+    //debug( ">%p %s\n", rval, code2str(rval->code) );
+
     statement_assig_t *ast = malloc(sizeof(*ast));
     memset( ast, 0, sizeof(*ast) );
     init_parent( (ast_t*) ast, STM_ASSIG );
@@ -175,80 +191,30 @@ ast_t *new_assig(ast_t *lval, ast_t *rval)
  * AST evaluation
  */
 
-
-expression_value_t *eval_debug(ast_t *ast)
+void print_expr(char *name, expression_value_t *ast)
 {
-    expression_value_t *val = eval(ast);
-    printf("-->");
-
-    switch ( val->parent.code )
+    switch ( ast->parent.code )
     {
     case EXPR_BOOL:
-        printf( "%s", val->val._bool ? "true" : "false" );
+        debug( "%s=%s", name, ast->val._bool ? "true" : "false" );
         break;
     case EXPR_INT:
-        printf( "%d", val->val._int );
+        debug( "%s=%d", name, ast->val._int );
         break;
     case EXPR_STR:
-        printf( "%s", val->val._str );
+        debug( "%s=%s", name, ast->val._str );
         break;
     default:
-        printf( "%x", val->val._int );
+        debug( "%s=%x", name, ast->val._int );
     }
-
-    printf("\n");
-
-    return val;
+    //debug( "-- (%s,%d)", code2str(((ast_t*)ast)->code), ast->next ? 1 : 0 );    
 }
 
 expression_value_t *eval(ast_t *ast)
 {
-    expression_value_t *ret = &ast_null;
+    expression_value_t *ret =  eval_expr( ast );
 
-    switch( ast->code & 0xff000000 )
-    {
-    case AST_TYPE_SIMPL:
-        /* Basic types */
-        ret = eval_value( ast );
-        break;
-
-    case AST_TYPE_UNI:
-        /* Unary operators */
-        ret = eval_uni( ast );
-        break;
-
-    case AST_TYPE_BIN:
-        /* Binary operators */
-        ret = eval_bin( ast );
-        break;
-
-    case AST_TYPE_STM:
-        /* Binary operators */
-        ret = eval_stm( ast );
-        break;
-
-    default:
-        die( "Invalid AST code %s\n", code2str(ast->code) );
-    }
-
-#if 1
-    printf("-->");
-    switch ( ret->parent.code )
-    {
-    case EXPR_BOOL:
-        printf( "%s", ret->val._bool ? "true" : "false" );
-        break;
-    case EXPR_INT:
-        printf( "%d", ret->val._int );
-        break;
-    case EXPR_STR:
-        printf( "%s", ret->val._str );
-        break;
-    default:
-        printf( "%x", ret->val._int );
-    }
-    printf("\n");
-#endif
+    //print_expr( ret );
 
     if ( ast->next )
         return eval( ast->next );
@@ -258,11 +224,42 @@ expression_value_t *eval(ast_t *ast)
        for tail-recursion optimization */
 }
 
+expression_value_t *eval_expr(ast_t *ast)
+{
+    switch( ast->code & 0xff000000 )
+    {
+    case AST_TYPE_SIMPL:
+        /* Basic types */
+        return eval_value( ast );
+        break;
+
+    case AST_TYPE_UNI:
+        /* Unary operators */
+        return eval_uni( ast );
+        break;
+
+    case AST_TYPE_BIN:
+        /* Binary operators */
+        return eval_bin( ast );
+        break;
+
+    case AST_TYPE_STM:
+        /* Binary operators */
+        return eval_stm( ast );
+        break;
+
+    default:
+        die( "Invalid AST code %s\n", code2str(ast->code) );
+    }
+
+    return &ast_null;
+}
+
 expression_value_t *eval_value(ast_t *ast)
 {
     expression_value_t *ast_value = (expression_value_t*) ast;
-    expression_value_t *ret = malloc(sizeof(*ast));
-    memset( ret, 0, sizeof(*ast) );
+    expression_value_t *ret = malloc(sizeof(*ret));
+    memset( ret, 0, sizeof(*ret) );
 
     switch( ast->code )
     {
@@ -289,8 +286,9 @@ expression_value_t *eval_value(ast_t *ast)
         expression_value_t *value = (expression_value_t*) ast_value;
         init_parent( (ast_t*) ret, value->parent.code );
         ret->val = value->val;
+        print_expr( ast_var->name, value );
+        break;
     }
-    break;
     case EXPR_FCALL:
         /*TODO: lookup function in symbol table, evaluate and return*/
         /*
@@ -311,8 +309,8 @@ expression_value_t *eval_uni(ast_t *ast)
 {
     expression_uni_t   *ast_uni = (expression_uni_t*) ast;
     expression_value_t *ast1    = eval(ast_uni->ast1);
-    expression_value_t *ret = malloc(sizeof(*ast));
-    memset( ret, 0, sizeof(*ast) );
+    expression_value_t *ret = malloc(sizeof(*ret));
+    memset( ret, 0, sizeof(*ret) );
 
     switch( ast->code )
     {
@@ -340,8 +338,8 @@ expression_value_t *eval_bin(ast_t *ast)
     expression_bin_t   *ast_bin = (expression_bin_t*) ast;
     expression_value_t *ast1    = eval(ast_bin->ast1);
     expression_value_t *ast2    = eval(ast_bin->ast2);
-    expression_value_t *ret = malloc(sizeof(*ast));
-    memset( ret, 0, sizeof(*ast) );
+    expression_value_t *ret = malloc(sizeof(*ret));
+    memset( ret, 0, sizeof(*ret) );
 
     switch( ast->code )
     {
@@ -494,6 +492,9 @@ expression_value_t *eval_stm(ast_t *ast)
         statement_assig_t *ast_assig = (statement_assig_t*) ast;
         expression_var_t  *ast_var   = (expression_var_t*) ast_assig->lval;
         ast_t             *ast_value = (ast_t*) eval(ast_assig->rval);
+
+        //debug( "<%p %s\n", ast_assig->rval, code2str(ast_assig->rval->code) );
+
         add_symbol( ast_var->name, ast_value );
         break;
     }
@@ -532,7 +533,7 @@ expression_value_t *eval_stm(ast_t *ast)
     case STM_DEBUG:
     {
         statement_print_t *ast_print = (statement_print_t*) ast;
-        fprintf( stderr, "%s\n", ast_print->data );
+        debug( "%s", ast_print->data );
     }
     break;
 
@@ -551,6 +552,11 @@ expression_value_t *eval_stm(ast_t *ast)
 
 ast_t *append_to_expr( ast_t *list, ast_t *expr )
 {
-    list->next = expr;
+    ast_t *iter = list;
+    while ( iter->next )
+    {
+        iter = iter->next;
+    }
+    iter->next = expr;
     return list;
 }

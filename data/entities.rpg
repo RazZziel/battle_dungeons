@@ -18,9 +18,12 @@ entity npc castle_guard extends(soldier,elf) {
 }
 
 action test() {
-        (2+3)*2+(-1);
-        lol = "lo"*4+"l";
-        lol;
+        a = ((2+3)*2+(-1))
+        a
+        lol = ("lo"*4+"l")
+        lol
+        a = lol
+        a
 }
 
 action piss_off_soldier() {
@@ -76,8 +79,8 @@ entity object key {
 }
 
 action warp() {
-        msg("lol")
+        "lol"
 }
 action loose_brick000() {
-        msg("lal")
+        "lal"
 }

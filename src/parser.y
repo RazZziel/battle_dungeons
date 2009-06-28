@@ -51,7 +51,7 @@ grid_node_t default_grid_node = { ' ', 20, FALSE, /*TRUE*/FALSE };
 }
 
 /*TODO: clear conflicts*/
-%expect 32
+//%expect 34
 
 %type <_int>  color_id color_pair entity_type expr_int expr_bool expr_bool_maybe
 %type <_str>  function_decl 
@@ -320,11 +320,11 @@ action_definition: ACTION function_decl
 	{
             parser.current_definition.name = $2;
             parser.current_definition.type = RULE_ACTION;
-            printf("_%s_\n", $2);
+            debug("__%s__()", $2);
 	}
 	'{' action_content '}'
 	{
-            eval_debug($5);
+            eval($5);
 
             parser.definition_cache = check_table_size( parser.definition_cache,
                                                         parser.definition_cache_lines,
@@ -334,8 +334,8 @@ action_definition: ACTION function_decl
 	}
 	;
 action_content:
-	  expression ';'                { $$ = $1; }
-	| action_content ';' expression  { $$ = append_to_expr( $1, $3 ); }
+	  expression                   { $$ = $1; }
+	| action_content  expression   { $$ = append_to_expr( $1, $2 ); }
 	;
 action_trigger: ON_TOUCH | ON_INTERACT;
 

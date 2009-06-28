@@ -4,13 +4,14 @@ Autores:                                             ∧∧
                                                  　(つ ﾉ
                                                   　(ノ
 Contenido:
-        battle_dungeons/src               :  código fuente
+        battle_dungeons/src/*             :  código fuente
         battle_dungeons/src/parser.l      :  lexer
         battle_dungeons/src/parser.y      :  parser
         battle_dungeons/src/parser.c      :  API del parser
+        battle_dungeons/src/symtable.c    :  tablas de símbolos
         battle_dungeons/src/interpreter.c :  intérprete, AST
-        battle_dungeons/include           :  estructuras de datos
-        battle_dungeons/data              :  scripts de ejemplo
+        battle_dungeons/include/*         :  estructuras de datos
+        battle_dungeons/data/*            :  scripts de ejemplo
 
 Compilación:                    Ejecución:
         cd battle_dungeons              cd battle_dungeons
@@ -21,9 +22,9 @@ Compilación:                    Ejecución:
 Comentarios:
         Esta práctica está montada sobre un intento de motor de
         roguelike[1] (una especie de juego de rol en modo texto)
-        que tenía empezado.
+        que teníamos empezado desde hacía tiempo.
 
-        Los objetivos de la práctica son:
+        Los objetivos de la práctica han sido:
 
             - Dotar al juego de rol de capacidades de scripting,
               para poder definir nuevos mapas, entidades y
@@ -43,14 +44,16 @@ Comentarios:
               definen la apariencia gráfica de cada tile. Ahora mismo
               sólo está implementado el soporte para juegos en modo
               texto, pero en teoría se podrían soportar mapas gráficos
-              bidimensionales o tridimensionales sin mucho esfuerzo.
+              bidimensionales o tridimensionales sin demasiado esfuerzo.
+
                   ejemplo:   battle_dungeons/data/maps.rpg
                              battle_dungeons/data/materials.rpg
 
             - Entidades, que pueden ser objetos o personajes, y son
               definidos de maneja jerárquica, con herencia múltiple.
               Cada entidad hereda una serie de propiedades de sus
-              "superclases", que puede sobreescribir o ampliar
+              "superclases", que puede sobreescribir o ampliar.
+
                   ejemplo:   battle_dungeons/data/entities.rpg
 
             - Acciones, que son pequeños procedimientos implementados
@@ -60,22 +63,23 @@ Comentarios:
               conversación, que al pisar una trampa en el mapa ésta
               se active, o simplemente que al pasar por una puerta el
               jugador se teletransporte a otro mapa.
-                 ejemplo:   battle_dungeons/data/---------------
+
+                  ejemplo:   battle_dungeons/data/entities.rpg
+
               Esta parte todavía está muy verde; sólo se ha
               implementado lo básico para obtener una prueba de
-              concepto funcional.
+              concepto funcional. Por ahora el juego no puede explotar
+              la funcionalidad proporcionada por los scripts, pero
+              estos ya pueden ser evaluados en modo debug.
 
               Detalles de diseño del lenguaje:
 
-                Se trata de un sencillo lenguaje multiparadigma
-              con tipado dinámico. Todas las componentes del
+                Se trata de un sencillo lenguaje imperativo/funcional
+              de tipado fuerte y dinámico. Todas las componentes del
               lenguaje son una expresión, para simplificar el diseño
               y maximizar la flexibilidad, y se puede emplear tanto
               un diseño algorítmico funcional muy limitado como uno
-              imperativo. Aunque toda expresión tiene un tipo único,
-              su control se realiza únicamente en tiempo de ejecución,
-              para simplificar el intérprete y agilizar la tarea del
-              programador.
+              imperativo.
 
 
 Nota:
@@ -83,9 +87,11 @@ Nota:
         despertar recelos sobre su originalidad, informamos que el repositorio
         que almacena el historial reciente de la aplicación se encuentra
         disponible públicamente en:
+
                    http://github.com/RazZziel/battle_dungeons
+
         y pedimos disculpas por la probable poca adecuación de los mensajes de
-        commit y de muchos de los comentarios del código.
+        commit, y de muchos de los comentarios del código.
 
 
 [1] http://en.wikipedia.org/wiki/Roguelike
