@@ -38,7 +38,7 @@ void __vdie__(const char *file, const int line, const char *function, const char
 {
     endwin();
 
-    fprintf( stderr, "%s:%d [%s()]: error: ", file, line, function );
+    fprintf( stderr, "\n%s:%d [%s()]: error: ", file, line, function );
 
     vfprintf( stderr, fmt, argp );
 
