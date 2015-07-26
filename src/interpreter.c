@@ -23,10 +23,10 @@ char *code2str(ast_code_t code)
 {
     switch( code )
     {
-    case AST_TYPE_SIMPL: return "AST_TYPE_SIMPL";
-    case AST_TYPE_UNI: return "AST_TYPE_UNI";
-    case AST_TYPE_BIN: return "AST_TYPE_BIN";
-    case AST_TYPE_STM: return "AST_TYPE_STM";
+    //case AST_TYPE_SIMPL: return "AST_TYPE_SIMPL";
+    //case AST_TYPE_UNI: return "AST_TYPE_UNI";
+    //case AST_TYPE_BIN: return "AST_TYPE_BIN";
+    //case AST_TYPE_STM: return "AST_TYPE_STM";
 
     case EXPR_BOOL: return "EXPR_BOOL";
     case EXPR_BOOL_MAYBE: return "EXPR_BOOL_MAYBE";
